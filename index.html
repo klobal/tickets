@@ -596,12 +596,10 @@
                 getEventTiers(eventOrId) {
                     const eventId = (typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId;
                     
-                    // 1. If admin added custom tiers for this event ID, return them first!
                     if (this.customTiers && this.customTiers[eventId] && this.customTiers[eventId].length > 0) {
                         return this.customTiers[eventId];
                     }
 
-                    // 2. Otherwise generate dynamic default tiers based on event object info or ID
                     let basePriceStr = '$25 / KES 3,200';
                     if (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.priceTag) {
                         basePriceStr = eventOrId.priceTag;
@@ -775,47 +773,47 @@
                 },
 
                 async submitOrder() {
-    if (!this.buyerContact) {
-        alert('Please enter your email or phone number.');
-        return;
-    }
-    if (!this.paymentFileBase64) {
-        alert('Please upload your payment receipt screenshot.');
-        return;
-    }
+                    if (!this.buyerContact) {
+                        alert('Please enter your email or phone number.');
+                        return;
+                    }
+                    if (!this.paymentFileBase64) {
+                        alert('Please upload your payment receipt screenshot.');
+                        return;
+                    }
 
-    this.submitting = true;
-    try {
-        const orderDescription = this.ticketQty + 'x ' + this.selectedTier.name + ' (' + this.calculatedTotalSummary.formattedTotal + ' total)';
-        const payload = {
-            action: 'submitOrder',
-            eventId: this.activeEvent.id,
-            eventTitle: this.activeEvent.title + ' [' + orderDescription + ']',
-            buyerContact: this.buyerContact,
-            fileName: this.paymentFileName,
-            fileData: this.paymentFileBase64
-        };
+                    this.submitting = true;
+                    try {
+                        const orderDescription = this.ticketQty + 'x ' + this.selectedTier.name + ' (' + this.calculatedTotalSummary.formattedTotal + ' total)';
+                        const payload = {
+                            action: 'submitOrder',
+                            eventId: this.activeEvent.id,
+                            eventTitle: this.activeEvent.title + ' [' + orderDescription + ']',
+                            buyerContact: this.buyerContact,
+                            fileName: this.paymentFileName,
+                            fileData: this.paymentFileBase64
+                        };
 
-        const response = await fetch(this.scriptURL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
+                        const response = await fetch(this.scriptURL, {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        
+                        const result = await response.json();
 
-        if (result.status === 'success') {
-            alert('Order submitted successfully for ' + orderDescription + '! Confirmation sent to ' + this.buyerContact);
-            this.resetAllFilters();
-        } else {
-            throw new Error(result.message || 'Server returned an error');
-        }
-    } catch (e) {
-        alert('Submission failed. Please try again.');
-        console.error(e);
-    } finally {
-        this.submitting = false;
-    }
-}
+                        if (result.status === 'success') {
+                            alert('Order submitted successfully for ' + orderDescription + '! Confirmation sent to ' + this.buyerContact);
+                            this.resetAllFilters();
+                        } else {
+                            throw new Error(result.message || 'Server returned an error');
+                        }
+                    } catch (e) {
+                        alert('Submission failed. Please try again.');
+                        console.error(e);
+                    } finally {
+                        this.submitting = false;
+                    }
+                },
 
                 get filteredEvents() {
                     return this.events.filter(event => {
@@ -838,7 +836,6 @@
                 },
 
                 resetAllFilters() {
-                    this.searchQuery = { value: '' }; // safe reset
                     this.searchQuery = '';
                     this.selectedCategory = '';
                     this.selectedRegion = '';
