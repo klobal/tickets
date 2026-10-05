@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EventSphere — Global Event Discovery & Manual Ticketing</title>
+    <title>EventSphere — Instant Manual Ticketing & Global Discovery</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -49,12 +49,15 @@
         </div>
     </header>
 
-    <!-- HERO & FILTER ENGINE -->
+    <!-- HERO & DYNAMIC GLOBAL FILTER ENGINE -->
     <section class="relative bg-gradient-to-b from-white via-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div class="max-w-4xl mx-auto text-center space-y-6">
             <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                Find any event worldwide, <span class="text-brand-600">in an eye-blink.</span>
+                Secure your tickets worldwide, <span class="text-brand-600">zero gateway fees.</span>
             </h1>
+            <p class="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
+                Discover live events across any country or continent, pay directly via mobile money or bank transfer, and receive your verified ticket instantly.
+            </p>
 
             <!-- SEARCH BAR -->
             <div class="relative max-w-2xl mx-auto shadow-2xl shadow-slate-300/60 rounded-2xl overflow-hidden bg-white border border-slate-200">
@@ -66,36 +69,49 @@
                 <input 
                     type="text" 
                     x-model.debounce.30ms="searchQuery" 
-                    placeholder="Search by artist, city, topic, or keyword..." 
+                    placeholder="Search events by title, country, city, topic, or organizer..." 
                     class="w-full pl-12 pr-12 py-4 text-slate-900 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
                 >
+                <template x-if="searchQuery">
+                    <button @click="searchQuery = ''" class="absolute inset-y-0 right-0 pr-4 flex items-center text-xs font-bold text-slate-400 hover:text-slate-600">Clear</button>
+                </template>
             </div>
 
-            <!-- REGION & CATEGORY PILLS -->
+            <!-- DYNAMIC FILTER CONTROLS -->
             <div class="space-y-3 pt-2">
+                <!-- Dynamic Global Region Filter (Auto-populated from Google Sheet data) -->
                 <div class="flex items-center justify-center flex-wrap gap-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Region:</span>
-                    <template x-for="reg in regions" :key="reg.id">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Region / Country:</span>
+                    <template x-for="reg in availableRegions" :key="reg">
                         <button 
-                            @click="selectedRegion = (selectedRegion === reg.id ? '' : reg.id)"
-                            :class="selectedRegion === reg.id ? 'bg-indigo-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                            class="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-                            x-text="reg.label"
+                            @click="selectedRegion = (selectedRegion === reg ? '' : reg)"
+                            :class="selectedRegion === reg ? 'bg-indigo-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                            class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all capitalize"
+                            x-text="reg"
                         ></button>
                     </template>
                 </div>
 
+                <!-- Category Filter -->
                 <div class="flex items-center justify-center flex-wrap gap-2">
                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Category:</span>
                     <template x-for="cat in categories" :key="cat">
                         <button 
                             @click="selectedCategory = (selectedCategory === cat ? '' : cat)"
-                            :class="selectedCategory === cat ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                            :class="selectedCategory === cat ? 'bg-brand-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
                             class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
                             x-text="cat"
                         ></button>
                     </template>
                 </div>
+
+                <!-- Active Filter Reset Bar -->
+                <template x-if="searchQuery || selectedCategory || selectedRegion">
+                    <div class="pt-2 flex items-center justify-center space-x-2 animate-fade-in">
+                        <span class="text-xs text-slate-500 font-medium">Filters active.</span>
+                        <button @click="resetAllFilters()" class="text-xs font-bold text-brand-600 hover:underline bg-brand-50 px-3 py-1 rounded-full border border-brand-100">Reset All Filters ✕</button>
+                    </div>
+                </template>
             </div>
         </div>
     </section>
@@ -106,11 +122,15 @@
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="'Showing ' + filteredEvents.length.toLocaleString() + ' Events'"></p>
         </div>
 
-        <!-- EMPTY STATE IF NO EVENTS -->
+        <!-- EMPTY STATE WITH QUICK RESET -->
         <template x-if="filteredEvents.length === 0">
-            <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-3">
-                <p class="text-base font-bold text-slate-700">No events found</p>
-                <p class="text-xs text-slate-500">Add events to your Google Sheet or adjust your search filters.</p>
+            <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-4 max-w-md mx-auto shadow-sm">
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400 text-xl font-bold">🌍</div>
+                <div class="space-y-1">
+                    <p class="text-base font-bold text-slate-800">No matching events found</p>
+                    <p class="text-xs text-slate-500">Try adding more events with different regions in your Google Sheet, or clear your filters.</p>
+                </div>
+                <button @click="resetAllFilters()" class="px-5 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 shadow-md">Clear Filters</button>
             </div>
         </template>
 
@@ -127,16 +147,19 @@
                     </div>
                     <div class="p-5 flex flex-col flex-grow justify-between space-y-4">
                         <div class="space-y-2">
-                            <div class="flex items-center text-xs font-semibold text-brand-600 space-x-2">
-                                <span x-text="event.date"></span>
-                                <span>•</span>
-                                <span class="truncate" x-text="event.location"></span>
+                            <div class="flex items-center justify-between text-xs font-semibold text-brand-600">
+                                <span class="flex items-center space-x-1">
+                                    <span x-text="event.date"></span>
+                                    <span>•</span>
+                                    <span class="truncate max-w-[140px]" x-text="event.location"></span>
+                                </span>
+                                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider" x-text="event.region"></span>
                             </div>
                             <h3 class="text-base font-bold text-slate-900 group-hover:text-brand-600 transition line-clamp-2" x-text="event.title"></h3>
                             <p class="text-slate-500 text-xs line-clamp-2" x-text="event.description"></p>
                         </div>
                         <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
-                            <span class="text-brand-600 group-hover:underline">View Manual Checkout →</span>
+                            <span class="text-brand-600 group-hover:underline">Instant Checkout →</span>
                             <span class="text-slate-400 font-normal" x-text="event.organizer"></span>
                         </div>
                     </div>
@@ -160,16 +183,26 @@
                             <h2 class="text-2xl font-extrabold text-slate-900 mt-2" x-text="activeEvent.title"></h2>
                             <p class="text-xs text-slate-500 mt-1" x-text="activeEvent.date + ' • ' + activeEvent.location"></p>
                         </div>
-                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">1. Make Manual Payment</h4>
-                            <p class="text-xs text-slate-700 font-mono bg-white p-3 rounded-xl border border-slate-200" x-text="activeEvent.paymentInstructions"></p>
+
+                        <!-- STEP 1: PAYMENT INSTRUCTIONS -->
+                        <div class="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900">Step 1: Send Payment</h4>
+                                <span class="text-xs font-extrabold text-indigo-600 bg-white px-2.5 py-0.5 rounded-full shadow-sm" x-text="activeEvent.priceTag"></span>
+                            </div>
+                            <p class="text-xs text-slate-700 font-mono bg-white p-3.5 rounded-xl border border-indigo-100 shadow-inner" x-text="activeEvent.paymentInstructions"></p>
                         </div>
-                        <div class="p-5 bg-brand-50/50 rounded-2xl border border-brand-100 space-y-4">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-brand-900">2. Submit Ticket Delivery & Receipt Proof</h4>
+
+                        <!-- STEP 2: SUBMIT PROOF -->
+                        <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Step 2: Submit Ticket Delivery Info & Receipt</h4>
+                            <p class="text-[11px] text-slate-500 leading-relaxed">
+                                Once you have completed the payment on your device, enter your contact details and upload your payment screenshot. Our team will verify and dispatch your ticket instantly!
+                            </p>
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Your Email or Phone</label>
-                                    <input type="text" x-model="buyerContact" placeholder="e.g., user@email.com or +254712345678" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm">
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Your Email or WhatsApp Phone Number</label>
+                                    <input type="text" x-model="buyerContact" placeholder="e.g., user@email.com or +254712345678" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Upload Payment Screenshot / Receipt</label>
@@ -177,9 +210,10 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="pt-2 flex items-center justify-end space-x-3">
-                            <button @click="closeEventModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600">Cancel</button>
-                            <button @click="submitOrder()" :disabled="submitting" class="px-6 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 shadow-md" x-text="submitting ? 'Submitting...' : 'Submit Order & Proof'"></button>
+                            <button @click="closeEventModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                            <button @click="submitOrder()" :disabled="submitting" class="px-6 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 shadow-md disabled:opacity-50" x-text="submitting ? 'Submitting Proof...' : 'Submit Payment Proof →'"></button>
                         </div>
                     </div>
                 </div>
@@ -187,7 +221,7 @@
         </div>
     </div>
 
-    <!-- PURE LIVE-SYNC BACKEND SCRIPT -->
+    <!-- DYNAMIC GLOBAL SCRIPT -->
     <script>
         function eventApp() {
             return {
@@ -204,15 +238,14 @@
 
                 scriptURL: 'https://script.google.com/macros/s/AKfycbzSG5cTHh7bGHIdLQhhUm-gSRUzKr_9f895llImxqtsyLX6FKarJWu-5iG5xeEhI7Wr/exec',
 
-                regions: [
-                    { id: 'africa', label: '🌍 Africa / East Africa' },
-                    { id: 'europe', label: '🇪🇺 Europe' },
-                    { id: 'virtual', label: '💻 Virtual / Global' }
-                ],
                 categories: ['Music & Concerts', 'Tech & AI', 'Business & Networking', 'Sports', 'Arts & Theatre', 'Festivals'],
-
-                // Cleared mock array so all events pull directly from Google Sheets
                 events: [],
+
+                // Dynamically extracts all unique regions/countries found in your Google Sheet
+                get availableRegions() {
+                    const regions = this.events.map(e => e.region ? e.region.trim().toLowerCase() : '').filter(Boolean);
+                    return [...new Set(regions)].sort();
+                },
 
                 async init() {
                     await this.fetchLiveEvents();
@@ -273,7 +306,7 @@
                             body: JSON.stringify(payload)
                         });
 
-                        alert('Order and receipt submitted successfully! Your ticket will be sent to ' + this.buyerContact + ' upon verification.');
+                        alert('Payment proof submitted successfully! Your ticket will be verified and dispatched to ' + this.buyerContact + ' shortly.');
                         this.closeEventModal();
                     } catch (e) {
                         alert('Submission failed. Please try again.');
@@ -283,15 +316,24 @@
                     }
                 },
 
+                // ROBUST, RESILIENT GLOBAL FILTER ENGINE
                 get filteredEvents() {
                     return this.events.filter(event => {
-                        const matchesQuery = this.searchQuery === '' || 
-                            event.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            event.location.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            event.category.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        const q = this.searchQuery.toLowerCase().trim();
+                        
+                        const matchesQuery = q === '' || 
+                            (event.title && event.title.toLowerCase().includes(q)) ||
+                            (event.location && event.location.toLowerCase().includes(q)) ||
+                            (event.category && event.category.toLowerCase().includes(q)) ||
+                            (event.organizer && event.organizer.toLowerCase().includes(q)) ||
+                            (event.region && event.region.toLowerCase().includes(q)) ||
+                            (event.description && event.description.includes(q));
 
-                        const matchesCategory = this.selectedCategory === '' || event.category === this.selectedCategory;
-                        const matchesRegion = this.selectedRegion === '' || event.region === this.selectedRegion;
+                        const matchesCategory = this.selectedCategory === '' || 
+                            (event.category && event.category.toLowerCase().trim() === this.selectedCategory.toLowerCase().trim());
+
+                        const matchesRegion = this.selectedRegion === '' || 
+                            (event.region && event.region.toLowerCase().trim() === this.selectedRegion.toLowerCase().trim());
 
                         return matchesQuery && matchesCategory && matchesRegion;
                     });
