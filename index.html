@@ -775,42 +775,47 @@
                 },
 
                 async submitOrder() {
-                    if (!this.buyerContact) {
-                        alert('Please enter your email or phone number.');
-                        return;
-                    }
-                    if (!this.paymentFileBase64) {
-                        alert('Please upload your payment receipt screenshot.');
-                        return;
-                    }
+    if (!this.buyerContact) {
+        alert('Please enter your email or phone number.');
+        return;
+    }
+    if (!this.paymentFileBase64) {
+        alert('Please upload your payment receipt screenshot.');
+        return;
+    }
 
-                    this.submitting = true;
-                    try {
-                        const orderDescription = this.ticketQty + 'x ' + this.selectedTier.name + ' (' + this.calculatedTotalSummary.formattedTotal + ' total)';
-                        const payload = {
-                            action: 'submitOrder',
-                            eventId: this.activeEvent.id,
-                            eventTitle: this.activeEvent.title + ' [' + orderDescription + ']',
-                            buyerContact: this.buyerContact,
-                            fileName: this.paymentFileName,
-                            fileData: this.paymentFileBase64
-                        };
+    this.submitting = true;
+    try {
+        const orderDescription = this.ticketQty + 'x ' + this.selectedTier.name + ' (' + this.calculatedTotalSummary.formattedTotal + ' total)';
+        const payload = {
+            action: 'submitOrder',
+            eventId: this.activeEvent.id,
+            eventTitle: this.activeEvent.title + ' [' + orderDescription + ']',
+            buyerContact: this.buyerContact,
+            fileName: this.paymentFileName,
+            fileData: this.paymentFileBase64
+        };
 
-                        await fetch(this.scriptURL, {
-                            method: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
+        const response = await fetch(this.scriptURL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
 
-                        alert('Order submitted successfully for ' + orderDescription + '! Confirmation sent to ' + this.buyerContact);
-                        this.resetAllFilters();
-                    } catch (e) {
-                        alert('Submission failed. Please try again.');
-                        console.error(e);
-                    } finally {
-                        this.submitting = false;
-                    }
-                },
+        if (result.status === 'success') {
+            alert('Order submitted successfully for ' + orderDescription + '! Confirmation sent to ' + this.buyerContact);
+            this.resetAllFilters();
+        } else {
+            throw new Error(result.message || 'Server returned an error');
+        }
+    } catch (e) {
+        alert('Submission failed. Please try again.');
+        console.error(e);
+    } finally {
+        this.submitting = false;
+    }
+}
 
                 get filteredEvents() {
                     return this.events.filter(event => {
