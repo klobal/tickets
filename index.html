@@ -262,7 +262,7 @@
                                 <template x-for="tier in getEventTiers(activeEvent)" :key="tier.name">
                                     <div @click="selectedTier = tier"
                                          :class="selectedTier.name === tier.name ? 'border-brand-600 bg-brand-50/60 ring-2 ring-brand-600' : 'border-slate-200 bg-white hover:border-slate-300'"
-                                         class="p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2">
+                                         class="p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2 relative">
                                         <div class="flex items-center justify-between">
                                             <span class="text-xs font-bold text-slate-900" x-text="tier.name"></span>
                                             <span class="text-xs font-extrabold text-brand-600" x-text="tier.price"></span>
@@ -271,6 +271,11 @@
                                             <span x-text="'🟢 ' + tier.remaining + ' left'"></span>
                                             <span x-text="selectedTier.name === tier.name ? '✓ Selected' : 'Select'"></span>
                                         </div>
+                                        <template x-if="isAdmin">
+                                            <div class="absolute top-2 right-2">
+                                                <button @click.stop="deleteTicketTier(activeEvent.id, tier.name)" class="text-[10px] text-red-500 hover:text-red-700 font-bold px-1.5 py-0.5 rounded bg-red-50">Delete Tier</button>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
                             </div>
@@ -405,12 +410,17 @@
                                 <template x-for="tier in getEventTiers(activeEvent)" :key="tier.name">
                                     <div @click="selectedTier = tier"
                                          :class="selectedTier.name === tier.name ? 'border-brand-600 bg-brand-50/60 ring-2 ring-brand-600' : 'border-slate-200 bg-white'"
-                                         class="p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between space-y-1">
+                                         class="p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between space-y-1 relative">
                                         <div class="flex items-center justify-between text-xs">
                                             <span class="font-bold text-slate-800" x-text="tier.name"></span>
                                             <span class="font-extrabold text-brand-600" x-text="tier.price"></span>
                                         </div>
                                         <span class="text-[10px] text-slate-500" x-text="'🟢 ' + tier.remaining + ' left'"></span>
+                                        <template x-if="isAdmin">
+                                            <div class="absolute top-1 right-1">
+                                                <button @click.stop="deleteTicketTier(activeEvent.id, tier.name)" class="text-[9px] text-red-500 hover:text-red-700 font-bold px-1 py-0.5 rounded bg-red-50">Delete</button>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
                             </div>
@@ -513,7 +523,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT WITH FIXED DYNAMIC TIER PARSING -->
+    <!-- SCRIPT WITH FIXED DYNAMIC TIER PARSING AND DELETION -->
     <script>
         function eventApp() {
             return {
@@ -548,7 +558,7 @@
                     const pass = prompt('Enter Admin Passcode:');
                     if (pass === 'admin123' || pass === 'klobal') {
                         this.isAdmin = true;
-                        alert('Admin Mode Activated! Custom tiers will now accurately persist per event ID.');
+                        alert('Admin Mode Activated! Custom tiers can now be added and deleted per event ID.');
                     } else if (pass !== null) {
                         alert('Incorrect passcode.');
                     }
@@ -576,11 +586,11 @@
                     const q = this.ticketQty;
                     let discountMultiplier = 1.0;
 
-                    if (q === 2) discountMultiplier = 0.75; // 25% less
-                    else if (q === 3) discountMultiplier = 0.65; // 35% less
-                    else if (q === 4 || q === 5) discountMultiplier = 0.55; // 45% less
-                    else if (q >= 6 && q <= 10) discountMultiplier = 0.50; // 50% less
-                    else if (q > 10) discountMultiplier = 0.40; // 60% less
+                    if (q === 2) discountMultiplier = 0.75; 
+                    else if (q === 3) discountMultiplier = 0.65; 
+                    else if (q === 4 || q === 5) discountMultiplier = 0.55; 
+                    else if (q >= 6 && q <= 10) discountMultiplier = 0.50; 
+                    else if (q > 10) discountMultiplier = 0.40; 
 
                     const subtotal = baseUnitPrice * q;
                     const finalTotal = subtotal * discountMultiplier;
@@ -640,6 +650,29 @@
                     this.newTierPrice = '';
                     this.newTierRemaining = '';
                     alert('New ticket tier added successfully!');
+                },
+
+                deleteTicketTier(eventId, tierName) {
+                    if (confirm(`Are you sure you want to delete the "${tierName}" tier?`)) {
+                        // If custom tiers are empty/not initialized yet, fall back to default list before filtering
+                        if (!this.customTiers[eventId]) {
+                            const defaults = [
+                                { name: 'Regular', price: '$25 / KES 3,200', remaining: 45 },
+                                { name: 'VIP', price: '$60 / KES 7,800', remaining: 12 },
+                                { name: 'VVIP', price: '$150 / KES 19,500', remaining: 5 }
+                            ];
+                            this.customTiers[eventId] = defaults;
+                        }
+
+                        this.customTiers[eventId] = this.customTiers[eventId].filter(t => t.name !== tierName);
+                        localStorage.setItem('eventsphere_tiers', JSON.stringify(this.customTiers));
+
+                        // If the currently selected tier was deleted, reset selection to the first available tier
+                        const remainingTiers = this.getEventTiers(eventId);
+                        if (remainingTiers.length > 0) {
+                            this.selectedTier = remainingTiers[0];
+                        }
+                    }
                 },
 
                 getEventReviews(eventId) {
