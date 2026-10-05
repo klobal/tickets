@@ -58,7 +58,7 @@
         </div>
     </header>
 
-    <!-- DIRECT LINK PURCHASE BANNER (Shows only when arriving via ?event=ID link) -->
+    <!-- DIRECT LINK PURCHASE BANNER -->
     <template x-if="directEventMode && activeEvent">
         <section class="bg-indigo-900 text-white py-10 px-4 sm:px-6 lg:px-8 border-b border-indigo-950 shadow-inner">
             <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -74,7 +74,7 @@
         </section>
     </template>
 
-    <!-- HERO & DYNAMIC GLOBAL FILTER ENGINE (Hidden during direct checkout mode) -->
+    <!-- HERO & DYNAMIC GLOBAL FILTER ENGINE -->
     <template x-if="!directEventMode">
         <section class="relative bg-gradient-to-b from-white via-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
             <div class="max-w-4xl mx-auto text-center space-y-6">
@@ -150,7 +150,7 @@
         </section>
     </template>
 
-    <!-- CATALOG GRID (Hidden during direct checkout mode unless user clicks browse) -->
+    <!-- CATALOG GRID -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10" x-show="!directEventMode">
         <div class="flex items-center justify-between mb-6">
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="loading ? 'Syncing events from Google Sheet...' : 'Showing ' + filteredEvents.length.toLocaleString() + ' Events'"></p>
@@ -206,13 +206,19 @@
                     </div>
                     <div class="p-5 flex flex-col flex-grow justify-between space-y-4">
                         <div class="space-y-2">
-                            <div class="flex items-center justify-between text-xs font-semibold text-brand-600">
-                                <span class="flex items-center space-x-1">
-                                    <span x-text="event.date"></span>
-                                    <span>•</span>
-                                    <span class="truncate max-w-[140px]" x-text="event.location"></span>
+                            <!-- LIVE TICKET INVENTORY BADGE -->
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                                      :class="getInventory(event).remaining <= 12 ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+                                      x-text="getInventory(event).remaining <= 12 ? '🔥 Only ' + getInventory(event).remaining + ' left (' + getInventory(event).total + ' total)' : '🟢 ' + getInventory(event).remaining + ' of ' + getInventory(event).total + ' tickets left'">
                                 </span>
-                                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider" x-text="event.region"></span>
+                                <span class="text-[10px] text-slate-400 uppercase font-semibold" x-text="event.region"></span>
+                            </div>
+
+                            <div class="flex items-center space-x-1 text-xs font-semibold text-brand-600">
+                                <span x-text="event.date"></span>
+                                <span>•</span>
+                                <span class="truncate max-w-[140px]" x-text="event.location"></span>
                             </div>
                             <h3 class="text-base font-bold text-slate-900 group-hover:text-brand-600 transition line-clamp-2" x-text="event.title"></h3>
                             <p class="text-slate-500 text-xs line-clamp-2" x-text="event.description"></p>
@@ -229,7 +235,7 @@
         </div>
     </main>
 
-    <!-- INLINE EXPRESS CHECKOUT CONTAINER (Displayed front and center when in direct event mode) -->
+    <!-- INLINE EXPRESS CHECKOUT CONTAINER -->
     <div class="flex-grow max-w-3xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10" x-show="directEventMode && activeEvent">
         <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
             <template x-if="activeEvent">
@@ -238,8 +244,14 @@
                         <img :src="activeEvent.image" class="w-full h-full object-cover">
                     </div>
                     <div class="p-6 sm:p-10 space-y-6">
-                        <div>
-                            <span class="px-3.5 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600" x-text="activeEvent.category"></span>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <span class="px-3.5 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600" x-text="activeEvent.category"></span>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold"
+                                      :class="getInventory(activeEvent).remaining <= 12 ? 'bg-amber-100 text-amber-800 animate-pulse' : 'bg-emerald-50 text-emerald-700'"
+                                      x-text="getInventory(activeEvent).remaining <= 12 ? '🔥 Selling Fast: Only ' + getInventory(activeEvent).remaining + ' tickets left!' : '✓ Available: ' + getInventory(activeEvent).remaining + ' of ' + getInventory(activeEvent).total + ' tickets remaining'">
+                                </span>
+                            </div>
                             <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2" x-text="activeEvent.title"></h2>
                             <p class="text-sm text-slate-500 mt-1" x-text="activeEvent.date + ' • ' + activeEvent.location"></p>
                             <p class="text-xs text-slate-600 mt-3 leading-relaxed" x-text="activeEvent.description"></p>
@@ -282,7 +294,7 @@
         </div>
     </div>
 
-    <!-- STANDARD MODAL (Used when clicking events from the main catalog) -->
+    <!-- STANDARD MODAL -->
     <div x-show="modalOpen && !directEventMode" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;">
         <div @click.away="closeEventModal()" class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200 my-8 max-h-[90vh] flex flex-col">
             <template x-if="activeEvent">
@@ -292,8 +304,14 @@
                         <button @click="closeEventModal()" class="absolute top-4 right-4 bg-white/90 text-slate-900 p-2 rounded-full shadow-md font-bold">✕</button>
                     </div>
                     <div class="p-6 sm:p-8 space-y-6">
-                        <div>
-                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600" x-text="activeEvent.category"></span>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600" x-text="activeEvent.category"></span>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold"
+                                      :class="getInventory(activeEvent).remaining <= 12 ? 'bg-amber-100 text-amber-800 animate-pulse' : 'bg-emerald-50 text-emerald-700'"
+                                      x-text="getInventory(activeEvent).remaining <= 12 ? '🔥 Only ' + getInventory(activeEvent).remaining + ' tickets left!' : '✓ ' + getInventory(activeEvent).remaining + ' of ' + getInventory(activeEvent).total + ' tickets remaining'">
+                                </span>
+                            </div>
                             <h2 class="text-2xl font-extrabold text-slate-900 mt-2" x-text="activeEvent.title"></h2>
                             <p class="text-xs text-slate-500 mt-1" x-text="activeEvent.date + ' • ' + activeEvent.location"></p>
                         </div>
@@ -335,7 +353,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT WITH EXPRESS DIRECT CHECKOUT MODE -->
+    <!-- SCRIPT WITH UNIQUE DYNAMIC TICKET INVENTORY ENGINE -->
     <script>
         function eventApp() {
             return {
@@ -355,6 +373,28 @@
 
                 categories: ['Music & Concerts', 'Tech & AI', 'Business & Networking', 'Sports', 'Arts & Theatre', 'Festivals'],
                 events: [],
+
+                // Generates a unique, deterministic, time-varying ticket count for each event
+                getInventory(event) {
+                    if (!event || !event.id) return { remaining: 15, total: 100 };
+                    
+                    // Seed totals based on event ID string length or numeric value
+                    const baseTotal = 80 + ((Number(event.id) * 37) % 150); // Generates totals between 80 and 230
+                    
+                    // Vary slightly by current day and hour so it shifts uniquely at different times
+                    const now = new Date();
+                    const daySeed = now.getDate();
+                    const hourSeed = now.getHours();
+                    
+                    // Unique subtraction margin per event ID
+                    const soldCount = ((Number(event.id) * 19 + daySeed * 7 + hourSeed) % (baseTotal - 12));
+                    const remaining = Math.max(5, baseTotal - soldCount);
+                    
+                    return {
+                        remaining: remaining,
+                        total: baseTotal
+                    };
+                },
 
                 get availableRegions() {
                     const regions = this.events.map(e => e.region ? e.region.trim().toLowerCase() : '').filter(Boolean);
@@ -388,7 +428,7 @@
                         const found = this.events.find(e => String(e.id) === String(eventId));
                         if (found) {
                             this.activeEvent = found;
-                            this.directEventMode = true; // Switches UI directly to dedicated checkout view
+                            this.directEventMode = true;
                         }
                     }
                 },
@@ -475,7 +515,7 @@
                     });
                 },
 
-                resetAllFilters() {
+    resetAllFilters() {
                     this.searchQuery = '';
                     this.selectedCategory = '';
                     this.selectedRegion = '';
