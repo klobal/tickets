@@ -297,6 +297,16 @@
                                         <textarea x-model="newAdminComment" placeholder="Type your custom review here..." class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none" rows="2"></textarea>
                                     </div>
                                     <button @click="postAdminReview(activeEvent.id)" class="w-full py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 shadow-sm">Publish Custom Review →</button>
+
+                                    <!-- Admin Ticket Inventory Editor Box -->
+                                    <div class="mt-4 pt-4 border-t border-brand-200 space-y-2">
+                                        <span class="text-[11px] font-bold text-brand-900 block">⚙️ Override Ticket Inventory (X of Y)</span>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <input type="number" x-model.number="adminRemaining" placeholder="Remaining (X)" class="p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                            <input type="number" x-model.number="adminTotal" placeholder="Total (Y)" class="p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                        </div>
+                                        <button @click="saveAdminInventory(activeEvent.id)" class="w-full py-2 bg-indigo-700 text-white text-xs font-bold rounded-lg hover:bg-indigo-800 shadow-sm">Save Ticket Count (X of Y)</button>
+                                    </div>
                                 </div>
                             </template>
                         </div>
@@ -383,18 +393,28 @@
                                 </template>
                             </div>
 
-                            <!-- Admin Comment Injector Box inside Modal -->
+                            <!-- Admin Comment & Inventory Customizer Box inside Modal -->
                             <template x-if="isAdmin">
                                 <div class="mt-4 pt-4 border-t border-slate-200 space-y-3 bg-brand-50 p-4 rounded-xl border border-brand-100">
                                     <div class="flex items-center justify-between">
                                         <span class="text-xs font-bold text-brand-900">👑 Admin Review Customizer</span>
-                                        <span class="text-[10px] text-brand-600">Add custom reviewer name & comment</span>
+                                        <span class="text-[10px] text-brand-600">Add reviewer name & comment</span>
                                     </div>
                                     <div class="space-y-2">
-                                        <input type="text" x-model="adminReviewerName" placeholder="Suggested Reviewer Name (e.g., Sarah M., Dr. Kamau)" class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none">
+                                        <input type="text" x-model="adminReviewerName" placeholder="Suggested Reviewer Name (e.g., Sarah M.)" class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none">
                                         <textarea x-model="newAdminComment" placeholder="Type your custom review here..." class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none" rows="2"></textarea>
                                     </div>
                                     <button @click="postAdminReview(activeEvent.id)" class="w-full py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 shadow-sm">Publish Custom Review →</button>
+
+                                    <!-- Admin Ticket Inventory Editor Box -->
+                                    <div class="mt-4 pt-4 border-t border-brand-200 space-y-2">
+                                        <span class="text-[11px] font-bold text-brand-900 block">⚙️ Override Ticket Inventory (X of Y)</span>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <input type="number" x-model.number="adminRemaining" placeholder="Remaining (X)" class="p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                            <input type="number" x-model.number="adminTotal" placeholder="Total (Y)" class="p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                        </div>
+                                        <button @click="saveAdminInventory(activeEvent.id)" class="w-full py-2 bg-indigo-700 text-white text-xs font-bold rounded-lg hover:bg-indigo-800 shadow-sm">Save Ticket Count (X of Y)</button>
+                                    </div>
                                 </div>
                             </template>
                         </div>
@@ -436,7 +456,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT -->
+    <!-- SCRIPT WITH ADMIN INVENTORY OVERRIDE -->
     <script>
         function eventApp() {
             return {
@@ -446,6 +466,8 @@
                 isAdmin: false,
                 adminReviewerName: '',
                 newAdminComment: '',
+                adminRemaining: '',
+                adminTotal: '',
                 searchQuery: '',
                 selectedCategory: '',
                 selectedRegion: '',
@@ -460,12 +482,13 @@
                 categories: ['Music & Concerts', 'Tech & AI', 'Business & Networking', 'Sports', 'Arts & Theatre', 'Festivals'],
                 events: [],
                 customReviews: {},
+                customInventory: {},
 
                 toggleAdminMode() {
                     const pass = prompt('Enter Admin Passcode:');
                     if (pass === 'admin123' || pass === 'klobal') {
                         this.isAdmin = true;
-                        alert('Admin Mode Activated! You can now add and delete custom attendee reviews.');
+                        alert('Admin Mode Activated! You can now edit ticket counts (X of Y) and manage reviews.');
                     } else if (pass !== null) {
                         alert('Incorrect passcode.');
                     }
@@ -534,8 +557,34 @@
                     }
                 },
 
+                saveAdminInventory(eventId) {
+                    const rem = parseInt(this.adminRemaining);
+                    const tot = parseInt(this.adminTotal);
+
+                    if (isNaN(rem) || isNaN(tot)) {
+                        alert('Please enter valid numeric values for remaining and total tickets.');
+                        return;
+                    }
+                    if (rem > tot) {
+                        alert('Remaining tickets cannot exceed total tickets.');
+                        return;
+                    }
+
+                    if (!this.customInventory) this.customInventory = {};
+                    this.customInventory[eventId] = { remaining: rem, total: tot };
+                    localStorage.setItem('eventsphere_inventory', JSON.stringify(this.customInventory));
+
+                    this.adminRemaining = '';
+                    this.adminTotal = '';
+                    alert('Ticket count successfully updated to ' + rem + ' of ' + tot + ' remaining!');
+                },
+
                 getInventory(event) {
                     if (!event || !event.id) return { remaining: 15, total: 100 };
+                    // Return admin override if saved
+                    if (this.customInventory && this.customInventory[event.id]) {
+                        return this.customInventory[event.id];
+                    }
                     const baseTotal = 80 + ((Number(event.id) * 37) % 150);
                     const now = new Date();
                     const daySeed = now.getDate();
@@ -551,9 +600,14 @@
                 },
 
                 async init() {
-                    const saved = localStorage.getItem('eventsphere_reviews');
-                    if (saved) {
-                        try { this.customReviews = JSON.parse(saved); } catch(e) {}
+                    const savedReviews = localStorage.getItem('eventsphere_reviews');
+                    if (savedReviews) {
+                        try { this.customReviews = JSON.parse(savedReviews); } catch(e) {}
+                    }
+
+                    const savedInv = localStorage.getItem('eventsphere_inventory');
+                    if (savedInv) {
+                        try { this.customInventory = JSON.parse(savedInv); } catch(e) {}
                     }
 
                     await this.fetchLiveEvents();
