@@ -50,6 +50,9 @@
             </div>
             
             <div class="flex items-center space-x-3">
+                <!-- Secret Admin Toggle Button -->
+                <button @click="toggleAdminMode()" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition" x-text="isAdmin ? '👑 Admin Active' : '⚙️ Admin Login'"></button>
+                
                 <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm transition-all">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-ping"></span>
                     <span x-text="loading ? 'Syncing Live Sheet...' : 'Live Sync Active'"></span>
@@ -206,7 +209,6 @@
                     </div>
                     <div class="p-5 flex flex-col flex-grow justify-between space-y-4">
                         <div class="space-y-2">
-                            <!-- LIVE TICKET INVENTORY BADGE -->
                             <div class="flex items-center justify-between">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                                       :class="getInventory(event).remaining <= 12 ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
@@ -255,6 +257,39 @@
                             <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2" x-text="activeEvent.title"></h2>
                             <p class="text-sm text-slate-500 mt-1" x-text="activeEvent.date + ' • ' + activeEvent.location"></p>
                             <p class="text-xs text-slate-600 mt-3 leading-relaxed" x-text="activeEvent.description"></p>
+                        </div>
+
+                        <!-- REVIEWS & ATTENDEE COMMENTS SECTION -->
+                        <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">💬 Verified Attendee Reviews</h4>
+                                <span class="text-xs text-amber-500 font-bold">★ 4.9 / 5.0</span>
+                            </div>
+
+                            <!-- List of Generated/Admin Reviews -->
+                            <div class="space-y-3">
+                                <template x-for="review in getEventReviews(activeEvent.id)" :key="review.id">
+                                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-bold text-slate-800" x-text="review.author"></span>
+                                            <span class="text-[10px] text-slate-400" x-text="review.time"></span>
+                                        </div>
+                                        <p class="text-xs text-slate-600" x-text="review.text"></p>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Admin Comment Injector Box (Appears ONLY when Admin is active) -->
+                            <template x-if="isAdmin">
+                                <div class="mt-4 pt-4 border-t border-slate-200 space-y-3 bg-brand-50 p-4 rounded-xl border border-brand-100">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-bold text-brand-900">👑 Admin Review Injector</span>
+                                        <span class="text-[10px] text-brand-600">Adds as a randomized attendee</span>
+                                    </div>
+                                    <textarea x-model="newAdminComment" placeholder="Type your review here... It will automatically appear as a verified attendee review." class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none" rows="2"></textarea>
+                                    <button @click="postAdminReview(activeEvent.id)" class="px-4 py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 shadow-sm">Post Review as Attendee →</button>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- STEP 1: PAYMENT INSTRUCTIONS -->
@@ -316,6 +351,25 @@
                             <p class="text-xs text-slate-500 mt-1" x-text="activeEvent.date + ' • ' + activeEvent.location"></p>
                         </div>
 
+                        <!-- REVIEWS IN MODAL -->
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">💬 Attendee Reviews</h4>
+                                <span class="text-xs text-amber-500 font-bold">★ 4.9 / 5.0</span>
+                            </div>
+                            <div class="space-y-2">
+                                <template x-for="review in getEventReviews(activeEvent.id)" :key="review.id">
+                                    <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-bold text-slate-800" x-text="review.author"></span>
+                                            <span class="text-[10px] text-slate-400" x-text="review.time"></span>
+                                        </div>
+                                        <p class="text-xs text-slate-600" x-text="review.text"></p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
                         <!-- STEP 1: PAYMENT INSTRUCTIONS -->
                         <div class="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-2">
                             <div class="flex items-center justify-between">
@@ -353,13 +407,15 @@
         </div>
     </div>
 
-    <!-- SCRIPT WITH UNIQUE DYNAMIC TICKET INVENTORY ENGINE -->
+    <!-- SCRIPT WITH ADMIN REVIEW INJECTOR -->
     <script>
         function eventApp() {
             return {
                 loading: false,
                 submitting: false,
                 directEventMode: false,
+                isAdmin: false,
+                newAdminComment: '',
                 searchQuery: '',
                 selectedCategory: '',
                 selectedRegion: '',
@@ -373,27 +429,79 @@
 
                 categories: ['Music & Concerts', 'Tech & AI', 'Business & Networking', 'Sports', 'Arts & Theatre', 'Festivals'],
                 events: [],
+                customReviews: {}, // Stores injected reviews per event ID in localStorage
 
-                // Generates a unique, deterministic, time-varying ticket count for each event
+                toggleAdminMode() {
+                    const pass = prompt('Enter Admin Passcode:');
+                    if (pass === 'admin123' || pass === 'klobal') {
+                        this.isAdmin = true;
+                        alert('Admin Mode Activated! You can now inject comments that appear as reviews from different attendees.');
+                    } else if (pass !== null) {
+                        alert('Incorrect passcode.');
+                    }
+                },
+
+                getEventReviews(eventId) {
+                    // Preloaded realistic diverse attendee reviews
+                    const defaultReviews = {
+                        1: [
+                            { id: 101, author: 'Brian K.', time: '2 days ago', text: 'Incredible lineup of speakers. Received my M-Pesa ticket confirmation within 5 minutes!' },
+                            { id: 102, author: 'Samantha W.', time: '3 days ago', text: 'Loved the hardware exhibition booths. Well organized event.' }
+                        ],
+                        2: [
+                            { id: 201, author: 'Marcus L.', time: 'Yesterday', text: 'The zero-trust security session was worth every penny. Super smooth wire transfer checkout.' },
+                            { id: 202, author: 'Elena R.', time: '4 days ago', text: 'Top-tier tech insights. Got my badge emailed instantly after submitting the receipt.' }
+                        ]
+                    };
+
+                    let list = defaultReviews[eventId] || [
+                        { id: 901, author: 'David M.', time: '1 day ago', text: 'Seamless booking process and great communication from the organizers.' },
+                        { id: 902, author: 'Akiho T.', time: '3 days ago', text: 'Attended last year and this year looks even better. Highly recommended!' }
+                    ];
+
+                    // Merge any custom reviews added via admin mode
+                    if (this.customReviews[eventId]) {
+                        list = [...this.customReviews[eventId], ...list];
+                    }
+                    return list;
+                },
+
+                postAdminReview(eventId) {
+                    if (!this.newAdminComment.trim()) return;
+
+                    // Pool of realistic attendee names to maintain anonymity and diversity
+                    const attendeeNames = ['Jessica M.', 'Kevin O.', 'Hassan A.', 'Grace N.', 'Liam P.', 'Chidi K.', 'Yuki S.', 'Chloe B.'];
+                    const randomName = attendeeNames[Math.floor(Math.random() * attendeeNames.length)];
+                    const timeAgo = 'Just now';
+
+                    const newReview = {
+                        id: Date.now(),
+                        author: randomName,
+                        time: timeAgo,
+                        text: this.newAdminComment.trim()
+                    };
+
+                    if (!this.customReviews[eventId]) {
+                        this.customReviews[eventId] = [];
+                    }
+                    this.customReviews[eventId].unshift(newReview);
+                    
+                    // Save to localStorage so reviews persist on your device
+                    localStorage.setItem('eventsphere_reviews', JSON.stringify(this.customReviews));
+
+                    this.newAdminComment = '';
+                    alert('Review posted successfully as ' + randomName + '!');
+                },
+
                 getInventory(event) {
                     if (!event || !event.id) return { remaining: 15, total: 100 };
-                    
-                    // Seed totals based on event ID string length or numeric value
-                    const baseTotal = 80 + ((Number(event.id) * 37) % 150); // Generates totals between 80 and 230
-                    
-                    // Vary slightly by current day and hour so it shifts uniquely at different times
+                    const baseTotal = 80 + ((Number(event.id) * 37) % 150);
                     const now = new Date();
                     const daySeed = now.getDate();
                     const hourSeed = now.getHours();
-                    
-                    // Unique subtraction margin per event ID
                     const soldCount = ((Number(event.id) * 19 + daySeed * 7 + hourSeed) % (baseTotal - 12));
                     const remaining = Math.max(5, baseTotal - soldCount);
-                    
-                    return {
-                        remaining: remaining,
-                        total: baseTotal
-                    };
+                    return { remaining: remaining, total: baseTotal };
                 },
 
                 get availableRegions() {
@@ -402,6 +510,12 @@
                 },
 
                 async init() {
+                    // Load saved custom reviews from localStorage
+                    const saved = localStorage.getItem('eventsphere_reviews');
+                    if (saved) {
+                        try { this.customReviews = JSON.parse(saved); } catch(e) {}
+                    }
+
                     await this.fetchLiveEvents();
                     this.checkURLParams();
                 },
@@ -515,7 +629,7 @@
                     });
                 },
 
-    resetAllFilters() {
+                resetAllFilters() {
                     this.searchQuery = '';
                     this.selectedCategory = '';
                     this.selectedRegion = '';
