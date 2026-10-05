@@ -259,7 +259,7 @@
                         <div class="space-y-3">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">1. Select Your Ticket Tier:</h4>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <template x-for="tier in getEventTiers(activeEvent.id)" :key="tier.name">
+                                <template x-for="tier in getEventTiers(activeEvent)" :key="tier.name">
                                     <div @click="selectedTier = tier"
                                          :class="selectedTier.name === tier.name ? 'border-brand-600 bg-brand-50/60 ring-2 ring-brand-600' : 'border-slate-200 bg-white hover:border-slate-300'"
                                          class="p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2">
@@ -402,7 +402,7 @@
                         <div class="space-y-2">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">1. Select Ticket Tier:</h4>
                             <div class="grid grid-cols-2 gap-2">
-                                <template x-for="tier in getEventTiers(activeEvent.id)" :key="tier.name">
+                                <template x-for="tier in getEventTiers(activeEvent)" :key="tier.name">
                                     <div @click="selectedTier = tier"
                                          :class="selectedTier.name === tier.name ? 'border-brand-600 bg-brand-50/60 ring-2 ring-brand-600' : 'border-slate-200 bg-white'"
                                          class="p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between space-y-1">
@@ -513,7 +513,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT WITH BULK TIERED DISCOUNT & TOTAL PAYEE ENGINE -->
+    <!-- SCRIPT WITH FIXED DYNAMIC TIER PARSING -->
     <script>
         function eventApp() {
             return {
@@ -548,7 +548,7 @@
                     const pass = prompt('Enter Admin Passcode:');
                     if (pass === 'admin123' || pass === 'klobal') {
                         this.isAdmin = true;
-                        alert('Admin Mode Activated! Bulk discounts and ticket tiers are live.');
+                        alert('Admin Mode Activated! Custom tiers will now accurately persist per event ID.');
                     } else if (pass !== null) {
                         alert('Incorrect passcode.');
                     }
@@ -556,11 +556,11 @@
 
                 getDiscountLabel() {
                     const q = this.ticketQty;
-                    if (q >= 2 && q <= 2) return '🎉 2 Tickets: 25% OFF Applied!';
+                    if (q === 2) return '🎉 2 Tickets: 25% OFF Applied!';
                     if (q === 3) return '🔥 3 Tickets: 35% OFF Applied!';
-                    if (q === 4) return '⭐ 4 Tickets: 45% OFF Applied!';
-                    if (q >= 6 && q <= 10) return '🚀 6-10 Tickets: 50% OFF Applied!';
-                    if (q > 10) return '👑 10+ Tickets: 60% OFF Applied!';
+                    if (q === 4 || q === 5) return '⭐ ' + q + ' Tickets: 45% OFF Applied!';
+                    if (q >= 6 && q <= 10) return '🚀 ' + q + ' Tickets: 50% OFF Applied!';
+                    if (q > 10) return '👑 ' + q + ' Tickets: 60% OFF Applied!';
                     return 'Standard Rate (Buy 2+ for bulk discounts)';
                 },
 
@@ -586,7 +586,6 @@
                     const finalTotal = subtotal * discountMultiplier;
 
                     const originalSymbol = priceStr.split(numbers[0])[0] || '$';
-                    const currencySuffix = priceStr.includes('KES') ? ' KES' : '';
 
                     return {
                         numericTotal: finalTotal,
@@ -594,33 +593,30 @@
                     };
                 },
 
-                getEventTiers(eventId) {
-                    const defaultTiers = {
-                        1: [
-                            { name: 'Regular', price: '$20 / KES 2,500', remaining: 45 },
-                            { name: 'VIP', price: '$50 / KES 6,500', remaining: 12 },
-                            { name: 'VVIP Table', price: '$150 / KES 19,500', remaining: 4 }
-                        ],
-                        2: [
-                            { name: 'Standard Pass', price: '$10 / KES 1,300', remaining: 80 },
-                            { name: 'All-Access VIP', price: '$75 / KES 9,800', remaining: 15 }
-                        ]
-                    };
-
-                    let tiers = defaultTiers[eventId] || [
-                        { name: 'Regular', price: '$25 / KES 3,200', remaining: 50 },
-                        { name: 'VIP', price: '$60 / KES 7,800', remaining: 10 }
-                    ];
-
-                    if (this.customTiers[eventId]) {
-                        tiers = [...this.customTiers[eventId], ...tiers];
+                getEventTiers(eventOrId) {
+                    const eventId = (typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId;
+                    
+                    // 1. If admin added custom tiers for this event ID, return them first!
+                    if (this.customTiers && this.customTiers[eventId] && this.customTiers[eventId].length > 0) {
+                        return this.customTiers[eventId];
                     }
-                    return tiers;
+
+                    // 2. Otherwise generate dynamic default tiers based on event object info or ID
+                    let basePriceStr = '$25 / KES 3,200';
+                    if (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.priceTag) {
+                        basePriceStr = eventOrId.priceTag;
+                    }
+
+                    return [
+                        { name: 'Regular', price: basePriceStr, remaining: 45 },
+                        { name: 'VIP', price: '$60 / KES 7,800', remaining: 12 },
+                        { name: 'VVIP', price: '$150 / KES 19,500', remaining: 5 }
+                    ];
                 },
 
                 getPrimaryPriceTag(event) {
                     if (!event || !event.id) return 'From $20';
-                    const tiers = this.getEventTiers(event.id);
+                    const tiers = this.getEventTiers(event);
                     return tiers.length > 0 ? 'From ' + tiers[0].price : (event.priceTag || 'Paid');
                 },
 
@@ -706,7 +702,7 @@
 
                 getInventory(event) {
                     if (!event || !event.id) return { remaining: 15, total: 100 };
-                    const tiers = this.getEventTiers(event.id);
+                    const tiers = this.getEventTiers(event);
                     const totalRem = tiers.reduce((acc, t) => acc + (t.remaining || 10), 0);
                     return { remaining: totalRem, total: totalRem + 50 };
                 },
@@ -750,7 +746,7 @@
                         if (found) {
                             this.activeEvent = found;
                             this.directEventMode = true;
-                            const tiers = this.getEventTiers(found.id);
+                            const tiers = this.getEventTiers(found);
                             if (tiers.length > 0) this.selectedTier = tiers[0];
                         }
                     }
@@ -837,6 +833,7 @@
                 },
 
                 resetAllFilters() {
+                    this.searchQuery = { value: '' }; // safe reset
                     this.searchQuery = '';
                     this.selectedCategory = '';
                     this.selectedRegion = '';
@@ -848,7 +845,7 @@
 
                 openEventModal(event) {
                     this.activeEvent = event;
-                    const tiers = this.getEventTiers(event.id);
+                    const tiers = this.getEventTiers(event);
                     if (tiers.length > 0) this.selectedTier = tiers[0];
                     this.ticketQty = 1;
                     this.buyerContact = '';
