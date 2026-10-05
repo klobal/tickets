@@ -58,83 +58,100 @@
         </div>
     </header>
 
-    <!-- HERO & DYNAMIC GLOBAL FILTER ENGINE -->
-    <section class="relative bg-gradient-to-b from-white via-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
-        <div class="max-w-4xl mx-auto text-center space-y-6">
-            <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                Secure your tickets worldwide, <span class="text-brand-600">zero gateway fees.</span>
-            </h1>
-            <p class="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
-                Discover live events across any country or continent, pay directly via mobile money or bank transfer, and receive your verified ticket instantly.
-            </p>
-
-            <!-- SEARCH BAR -->
-            <div class="relative max-w-2xl mx-auto shadow-2xl shadow-slate-300/60 rounded-2xl overflow-hidden bg-white border border-slate-200">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
+    <!-- DIRECT LINK PURCHASE BANNER (Shows only when arriving via ?event=ID link) -->
+    <template x-if="directEventMode && activeEvent">
+        <section class="bg-indigo-900 text-white py-10 px-4 sm:px-6 lg:px-8 border-b border-indigo-950 shadow-inner">
+            <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="space-y-2 text-center sm:text-left">
+                    <span class="bg-brand-600 text-white px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">🎫 Express Checkout Mode</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight" x-text="'Securing Ticket for: ' + activeEvent.title"></h2>
+                    <p class="text-xs sm:text-sm text-indigo-200" x-text="activeEvent.date + ' • ' + activeEvent.location + ' | Organizer: ' + activeEvent.organizer"></p>
                 </div>
-                <input 
-                    type="text" 
-                    x-model.debounce.30ms="searchQuery" 
-                    placeholder="Search events by title, country, city, topic, or organizer..." 
-                    class="w-full pl-12 pr-12 py-4 text-slate-900 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
-                >
-                <template x-if="searchQuery">
-                    <button @click="searchQuery = ''" class="absolute inset-y-0 right-0 pr-4 flex items-center text-xs font-bold text-slate-400 hover:text-slate-600">Clear</button>
-                </template>
+                <button @click="resetAllFilters()" class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition border border-white/20 whitespace-nowrap">
+                    Browse All Events 🌍
+                </button>
             </div>
+        </section>
+    </template>
 
-            <!-- DYNAMIC FILTER CONTROLS -->
-            <div class="space-y-3 pt-2">
-                <!-- Region Filter -->
-                <div class="flex items-center justify-center flex-wrap gap-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Region / Country:</span>
-                    <!-- Skeleton Loader for Region Pills if loading -->
-                    <template x-if="loading && availableRegions.length === 0">
-                        <div class="flex space-x-2">
-                            <div class="h-7 w-20 bg-slate-200 rounded-full animate-pulse"></div>
-                            <div class="h-7 w-24 bg-slate-200 rounded-full animate-pulse"></div>
-                            <div class="h-7 w-16 bg-slate-200 rounded-full animate-pulse"></div>
+    <!-- HERO & DYNAMIC GLOBAL FILTER ENGINE (Hidden during direct checkout mode) -->
+    <template x-if="!directEventMode">
+        <section class="relative bg-gradient-to-b from-white via-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
+            <div class="max-w-4xl mx-auto text-center space-y-6">
+                <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+                    Secure your tickets worldwide, <span class="text-brand-600">zero gateway fees.</span>
+                </h1>
+                <p class="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
+                    Discover live events across any country or continent, pay directly via mobile money or bank transfer, and receive your verified ticket instantly.
+                </p>
+
+                <!-- SEARCH BAR -->
+                <div class="relative max-w-2xl mx-auto shadow-2xl shadow-slate-300/60 rounded-2xl overflow-hidden bg-white border border-slate-200">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <input 
+                        type="text" 
+                        x-model.debounce.30ms="searchQuery" 
+                        placeholder="Search events by title, country, city, topic, or organizer..." 
+                        class="w-full pl-12 pr-12 py-4 text-slate-900 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
+                    >
+                    <template x-if="searchQuery">
+                        <button @click="searchQuery = ''" class="absolute inset-y-0 right-0 pr-4 flex items-center text-xs font-bold text-slate-400 hover:text-slate-600">Clear</button>
+                    </template>
+                </div>
+
+                <!-- DYNAMIC FILTER CONTROLS -->
+                <div class="space-y-3 pt-2">
+                    <!-- Region Filter -->
+                    <div class="flex items-center justify-center flex-wrap gap-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Region / Country:</span>
+                        <template x-if="loading && availableRegions.length === 0">
+                            <div class="flex space-x-2">
+                                <div class="h-7 w-20 bg-slate-200 rounded-full animate-pulse"></div>
+                                <div class="h-7 w-24 bg-slate-200 rounded-full animate-pulse"></div>
+                                <div class="h-7 w-16 bg-slate-200 rounded-full animate-pulse"></div>
+                            </div>
+                        </template>
+                        <template x-for="reg in availableRegions" :key="reg">
+                            <button 
+                                @click="selectedRegion = (selectedRegion === reg ? '' : reg)"
+                                :class="selectedRegion === reg ? 'bg-indigo-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                                class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all capitalize"
+                                x-text="reg"
+                            ></button>
+                        </template>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="flex items-center justify-center flex-wrap gap-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Category:</span>
+                        <template x-for="cat in categories" :key="cat">
+                            <button 
+                                @click="selectedCategory = (selectedCategory === cat ? '' : cat)"
+                                :class="selectedCategory === cat ? 'bg-brand-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                                class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+                                x-text="cat"
+                            ></button>
+                        </template>
+                    </div>
+
+                    <!-- Active Filter Reset Bar -->
+                    <template x-if="searchQuery || selectedCategory || selectedRegion">
+                        <div class="pt-2 flex items-center justify-center space-x-2 animate-fade-in">
+                            <span class="text-xs text-slate-500 font-medium">Filters active.</span>
+                            <button @click="resetAllFilters()" class="text-xs font-bold text-brand-600 hover:underline bg-brand-50 px-3 py-1 rounded-full border border-brand-100">Reset All Filters ✕</button>
                         </div>
                     </template>
-                    <template x-for="reg in availableRegions" :key="reg">
-                        <button 
-                            @click="selectedRegion = (selectedRegion === reg ? '' : reg)"
-                            :class="selectedRegion === reg ? 'bg-indigo-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                            class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all capitalize"
-                            x-text="reg"
-                        ></button>
-                    </template>
                 </div>
-
-                <!-- Category Filter -->
-                <div class="flex items-center justify-center flex-wrap gap-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Category:</span>
-                    <template x-for="cat in categories" :key="cat">
-                        <button 
-                            @click="selectedCategory = (selectedCategory === cat ? '' : cat)"
-                            :class="selectedCategory === cat ? 'bg-brand-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                            class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
-                            x-text="cat"
-                        ></button>
-                    </template>
-                </div>
-
-                <!-- Active Filter Reset Bar -->
-                <template x-if="searchQuery || selectedCategory || selectedRegion">
-                    <div class="pt-2 flex items-center justify-center space-x-2 animate-fade-in">
-                        <span class="text-xs text-slate-500 font-medium">Filters active.</span>
-                        <button @click="resetAllFilters()" class="text-xs font-bold text-brand-600 hover:underline bg-brand-50 px-3 py-1 rounded-full border border-brand-100">Reset All Filters ✕</button>
-                    </div>
-                </template>
             </div>
-        </div>
-    </section>
+        </section>
+    </template>
 
-    <!-- CATALOG GRID -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- CATALOG GRID (Hidden during direct checkout mode unless user clicks browse) -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10" x-show="!directEventMode">
         <div class="flex items-center justify-between mb-6">
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="loading ? 'Syncing events from Google Sheet...' : 'Showing ' + filteredEvents.length.toLocaleString() + ' Events'"></p>
         </div>
@@ -212,8 +229,61 @@
         </div>
     </main>
 
-    <!-- CHECKOUT MODAL -->
-    <div x-show="modalOpen" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;">
+    <!-- INLINE EXPRESS CHECKOUT CONTAINER (Displayed front and center when in direct event mode) -->
+    <div class="flex-grow max-w-3xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10" x-show="directEventMode && activeEvent">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+            <template x-if="activeEvent">
+                <div>
+                    <div class="relative h-64 w-full bg-slate-100">
+                        <img :src="activeEvent.image" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 sm:p-10 space-y-6">
+                        <div>
+                            <span class="px-3.5 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600" x-text="activeEvent.category"></span>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2" x-text="activeEvent.title"></h2>
+                            <p class="text-sm text-slate-500 mt-1" x-text="activeEvent.date + ' • ' + activeEvent.location"></p>
+                            <p class="text-xs text-slate-600 mt-3 leading-relaxed" x-text="activeEvent.description"></p>
+                        </div>
+
+                        <!-- STEP 1: PAYMENT INSTRUCTIONS -->
+                        <div class="p-5 bg-indigo-50/75 rounded-2xl border border-indigo-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900">Step 1: Send Payment</h4>
+                                <span class="text-xs font-extrabold text-indigo-600 bg-white px-3 py-1 rounded-full shadow-sm" x-text="activeEvent.priceTag"></span>
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-800 font-mono bg-white p-4 rounded-xl border border-indigo-100 shadow-inner" x-text="activeEvent.paymentInstructions"></p>
+                        </div>
+
+                        <!-- STEP 2: SUBMIT PROOF -->
+                        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Step 2: Submit Ticket Delivery Info & Receipt</h4>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                Once you have completed the payment on your device, enter your contact details and upload your payment screenshot. Our team will verify and dispatch your ticket instantly!
+                            </p>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Your Email or WhatsApp Phone Number</label>
+                                    <input type="text" x-model="buyerContact" placeholder="e.g., user@email.com or +254712345678" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Upload Payment Screenshot / Receipt</label>
+                                    <input type="file" @change="handleFileUpload($event)" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-brand-600 file:text-white cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex items-center justify-between">
+                            <button @click="resetAllFilters()" class="px-5 py-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100">← Browse Other Events</button>
+                            <button @click="submitOrder()" :disabled="submitting" class="px-8 py-3 rounded-xl bg-brand-600 text-white text-xs font-bold hover:bg-brand-700 shadow-lg disabled:opacity-50" x-text="submitting ? 'Submitting Proof...' : 'Submit Payment Proof →'"></button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- STANDARD MODAL (Used when clicking events from the main catalog) -->
+    <div x-show="modalOpen && !directEventMode" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;">
         <div @click.away="closeEventModal()" class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200 my-8 max-h-[90vh] flex flex-col">
             <template x-if="activeEvent">
                 <div class="flex flex-col h-full overflow-y-auto">
@@ -265,12 +335,13 @@
         </div>
     </div>
 
-    <!-- SCRIPT WITH BEAUTIFUL LOADING & SKELETON ENGINE -->
+    <!-- SCRIPT WITH EXPRESS DIRECT CHECKOUT MODE -->
     <script>
         function eventApp() {
             return {
                 loading: false,
                 submitting: false,
+                directEventMode: false,
                 searchQuery: '',
                 selectedCategory: '',
                 selectedRegion: '',
@@ -316,7 +387,8 @@
                     if (eventId && this.events.length > 0) {
                         const found = this.events.find(e => String(e.id) === String(eventId));
                         if (found) {
-                            this.openEventModal(found);
+                            this.activeEvent = found;
+                            this.directEventMode = true; // Switches UI directly to dedicated checkout view
                         }
                     }
                 },
@@ -372,7 +444,7 @@
                         });
 
                         alert('Payment proof submitted successfully! Your ticket will be verified and dispatched to ' + this.buyerContact + ' shortly.');
-                        this.closeEventModal();
+                        this.resetAllFilters();
                     } catch (e) {
                         alert('Submission failed. Please try again.');
                         console.error(e);
@@ -407,6 +479,8 @@
                     this.searchQuery = '';
                     this.selectedCategory = '';
                     this.selectedRegion = '';
+                    this.directEventMode = false;
+                    this.activeEvent = null;
                     window.history.replaceState({}, document.title, window.location.pathname);
                 },
 
