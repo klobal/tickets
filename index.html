@@ -12,6 +12,15 @@
                 extend: {
                     colors: {
                         brand: { 50: '#eef2ff', 100: '#e0e7ff', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' }
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        }
+                    },
+                    animation: {
+                        shimmer: 'shimmer 1.5s infinite'
                     }
                 }
             }
@@ -41,9 +50,9 @@
             </div>
             
             <div class="flex items-center space-x-3">
-                <span class="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                    <span x-text="loading ? 'Syncing Sheet...' : 'Live Sync Active'"></span>
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm transition-all">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-ping"></span>
+                    <span x-text="loading ? 'Syncing Live Sheet...' : 'Live Sync Active'"></span>
                 </span>
             </div>
         </div>
@@ -82,6 +91,14 @@
                 <!-- Region Filter -->
                 <div class="flex items-center justify-center flex-wrap gap-2">
                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Region / Country:</span>
+                    <!-- Skeleton Loader for Region Pills if loading -->
+                    <template x-if="loading && availableRegions.length === 0">
+                        <div class="flex space-x-2">
+                            <div class="h-7 w-20 bg-slate-200 rounded-full animate-pulse"></div>
+                            <div class="h-7 w-24 bg-slate-200 rounded-full animate-pulse"></div>
+                            <div class="h-7 w-16 bg-slate-200 rounded-full animate-pulse"></div>
+                        </div>
+                    </template>
                     <template x-for="reg in availableRegions" :key="reg">
                         <button 
                             @click="selectedRegion = (selectedRegion === reg ? '' : reg)"
@@ -119,11 +136,35 @@
     <!-- CATALOG GRID -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div class="flex items-center justify-between mb-6">
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="'Showing ' + filteredEvents.length.toLocaleString() + ' Events'"></p>
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="loading ? 'Syncing events from Google Sheet...' : 'Showing ' + filteredEvents.length.toLocaleString() + ' Events'"></p>
         </div>
 
+        <!-- SKELETON LOADING GRID -->
+        <template x-if="loading && events.length === 0">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="i in [1, 2, 3, 4, 5, 6]">
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col space-y-4 p-4 animate-pulse">
+                        <div class="h-48 w-full bg-slate-200 rounded-xl"></div>
+                        <div class="space-y-3 flex-grow">
+                            <div class="flex justify-between">
+                                <div class="h-4 bg-slate-200 rounded w-1/3"></div>
+                                <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+                            </div>
+                            <div class="h-5 bg-slate-200 rounded w-4/5"></div>
+                            <div class="h-3 bg-slate-200 rounded w-full"></div>
+                            <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+                        </div>
+                        <div class="pt-4 border-t border-slate-100 flex justify-between items-center">
+                            <div class="h-4 bg-slate-200 rounded w-1/3"></div>
+                            <div class="h-6 bg-slate-200 rounded w-1/4"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
         <!-- EMPTY STATE -->
-        <template x-if="filteredEvents.length === 0">
+        <template x-if="!loading && filteredEvents.length === 0">
             <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-4 max-w-md mx-auto shadow-sm">
                 <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400 text-xl font-bold">🌍</div>
                 <div class="space-y-1">
@@ -134,7 +175,8 @@
             </div>
         </template>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- EVENT CARDS GRID -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" x-show="!loading || events.length > 0">
             <template x-for="event in filteredEvents" :key="event.id">
                 <div 
                     @click="openEventModal(event)"
@@ -160,7 +202,6 @@
                         </div>
                         <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
                             <span class="text-brand-600 group-hover:underline">Instant Checkout →</span>
-                            <!-- Share button to copy direct event link easily -->
                             <button @click.stop="copyEventLink(event.id, $event)" class="text-slate-400 hover:text-brand-600 text-[11px] flex items-center space-x-1 bg-slate-50 hover:bg-brand-50 px-2.5 py-1 rounded-lg border border-slate-200 transition">
                                 <span>🔗 Copy Link</span>
                             </button>
@@ -224,7 +265,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT WITH DEEP LINKING SUPPORT -->
+    <!-- SCRIPT WITH BEAUTIFUL LOADING & SKELETON ENGINE -->
     <script>
         function eventApp() {
             return {
@@ -269,7 +310,6 @@
                     }
                 },
 
-                // Auto-open modal if URL contains ?event=ID
                 checkURLParams() {
                     const urlParams = new URLSearchParams(window.location.search);
                     const eventId = urlParams.get('event');
@@ -367,7 +407,6 @@
                     this.searchQuery = '';
                     this.selectedCategory = '';
                     this.selectedRegion = '';
-                    // Clear query param from URL without reloading page
                     window.history.replaceState({}, document.title, window.location.pathname);
                 },
 
@@ -377,7 +416,6 @@
                     this.paymentFileBase64 = null;
                     this.paymentFileName = '';
                     this.modalOpen = true;
-                    // Update URL parameter so sharing works immediately
                     const newURL = window.location.pathname + '?event=' + event.id;
                     window.history.replaceState({}, document.title, newURL);
                 },
@@ -385,7 +423,6 @@
                 closeEventModal() {
                     this.modalOpen = false;
                     this.activeEvent = null;
-                    // Clear the event query param from URL when modal is closed
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
