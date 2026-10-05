@@ -106,6 +106,14 @@
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="'Showing ' + filteredEvents.length.toLocaleString() + ' Events'"></p>
         </div>
 
+        <!-- EMPTY STATE IF NO EVENTS -->
+        <template x-if="filteredEvents.length === 0">
+            <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-3">
+                <p class="text-base font-bold text-slate-700">No events found</p>
+                <p class="text-xs text-slate-500">Add events to your Google Sheet or adjust your search filters.</p>
+            </div>
+        </template>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <template x-for="event in filteredEvents" :key="event.id">
                 <div 
@@ -179,7 +187,7 @@
         </div>
     </div>
 
-    <!-- APP SCRIPT WITH INSTANT FALLBACK & LIVE SYNC -->
+    <!-- PURE LIVE-SYNC BACKEND SCRIPT -->
     <script>
         function eventApp() {
             return {
@@ -194,7 +202,6 @@
                 paymentFileBase64: null,
                 paymentFileName: '',
 
-                // REPLACE WITH YOUR GOOGLE APPS SCRIPT WEB APP URL WHEN READY
                 scriptURL: 'https://script.google.com/macros/s/AKfycbzSG5cTHh7bGHIdLQhhUm-gSRUzKr_9f895llImxqtsyLX6FKarJWu-5iG5xeEhI7Wr/exec',
 
                 regions: [
@@ -204,93 +211,11 @@
                 ],
                 categories: ['Music & Concerts', 'Tech & AI', 'Business & Networking', 'Sports', 'Arts & Theatre', 'Festivals'],
 
-                // Instant mock dataset so events show up immediately
-                events: [
-                    { 
-                        id: 1, 
-                        title: 'Nairobi Cyber Security & AI Summit 2026', 
-                        category: 'Tech & AI', 
-                        region: 'africa',
-                        date: '2026-11-15', 
-                        location: 'Nairobi, Kenya', 
-                        priceTag: 'KES 2,500', 
-                        description: 'Deep dive into zero-trust network defenses and AI security models.', 
-                        image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=800', 
-                        organizer: 'TechSec Africa', 
-                        paymentInstructions: 'Pay via M-Pesa Till Number: 543210 (TechSec Africa) Amount: KES 2,500' 
-                    },
-                    { 
-                        id: 2, 
-                        title: 'Afrobeats & Rhumba Night Festival', 
-                        category: 'Music & Concerts', 
-                        region: 'africa',
-                        date: '2026-10-20', 
-                        location: 'Carnivore Grounds, Nairobi', 
-                        priceTag: 'KES 1,500', 
-                        description: 'Live bands, top DJs, and food pop-ups celebrating rhythm and culture.', 
-                        image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800', 
-                        organizer: 'VibeMasters', 
-                        paymentInstructions: 'Pay via M-Pesa Send Money to 0712345678 (John Doe) Amount: KES 1,500' 
-                    },
-                    { 
-                        id: 3, 
-                        title: 'Global Startup Pitch & Investor Meetup', 
-                        category: 'Business & Networking', 
-                        region: 'virtual',
-                        date: '2026-10-10', 
-                        location: 'Virtual / Global', 
-                        priceTag: 'Free / RSVP', 
-                        description: 'Connect with international angel investors and venture capitalists scaling disruptive tech.', 
-                        image: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&q=80&w=800', 
-                        organizer: 'StartupWorld', 
-                        paymentInstructions: 'Free event. No payment required. Submit contact info to receive webinar link.' 
-                    },
-                    { 
-                        id: 4, 
-                        title: 'Berlin Electronic Underground Festival', 
-                        category: 'Music & Concerts', 
-                        region: 'europe',
-                        date: '2026-11-05', 
-                        location: 'Berlin, Germany', 
-                        priceTag: '€45.00', 
-                        description: 'An immersive 12-hour showcase of avant-garde techno and visual art installations.', 
-                        image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=800', 
-                        organizer: 'KlangKultur', 
-                        paymentInstructions: 'Pay via Bank Transfer to DE89 3704 ... (KlangKultur UG)' 
-                    },
-                    { 
-                        id: 5, 
-                        title: 'Lagos FinTech & Web3 Hackathon', 
-                        category: 'Tech & AI', 
-                        region: 'africa',
-                        date: '2026-10-18', 
-                        location: 'Lagos, Nigeria', 
-                        priceTag: '₦10,000', 
-                        description: 'Build decentralized financial solutions and AI payment gateways for Africa’s economy.', 
-                        image: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=800', 
-                        organizer: 'ChainLagos', 
-                        paymentInstructions: 'Pay via Flutterwave to Account: 0123456789 (ChainLagos Ltd)' 
-                    },
-                    { 
-                        id: 6, 
-                        title: 'Safari Sevens Rugby Championship', 
-                        category: 'Sports', 
-                        region: 'africa',
-                        date: '2026-11-28', 
-                        location: 'RFUEA Grounds, Nairobi', 
-                        priceTag: 'KES 1,000', 
-                        description: 'Africa’s premier rugby sevens tournament featuring international teams and entertainment.', 
-                        image: 'https://images.unsplash.com/photo-1517649763962-0c6232662102?auto=format&fit=crop&q=80&w=800', 
-                        organizer: 'Kenya Rugby', 
-                        paymentInstructions: 'Pay via M-Pesa Paybill: 987654 Account: Rugby26' 
-                    }
-                ],
+                // Cleared mock array so all events pull directly from Google Sheets
+                events: [],
 
                 async init() {
-                    // If a custom Google Apps Script URL is set, fetch live data
-                    if (!this.scriptURL.includes('YOUR_DEPLOYED_SCRIPT_ID')) {
-                        await this.fetchLiveEvents();
-                    }
+                    await this.fetchLiveEvents();
                 },
 
                 async fetchLiveEvents() {
@@ -298,11 +223,11 @@
                     try {
                         const response = await fetch(this.scriptURL + '?action=getEvents');
                         const data = await response.json();
-                        if (data && data.length > 0) {
+                        if (data && Array.isArray(data)) {
                             this.events = data;
                         }
                     } catch (e) {
-                        console.error('Error fetching live events, keeping mock catalog:', e);
+                        console.error('Error fetching live events from Google Sheet:', e);
                     } finally {
                         this.loading = false;
                     }
@@ -332,23 +257,21 @@
 
                     this.submitting = true;
                     try {
-                        if (!this.scriptURL.includes('YOUR_DEPLOYED_SCRIPT_ID')) {
-                            const payload = {
-                                action: 'submitOrder',
-                                eventId: this.activeEvent.id,
-                                eventTitle: this.activeEvent.title,
-                                buyerContact: this.buyerContact,
-                                fileName: this.paymentFileName,
-                                fileData: this.paymentFileBase64
-                            };
+                        const payload = {
+                            action: 'submitOrder',
+                            eventId: this.activeEvent.id,
+                            eventTitle: this.activeEvent.title,
+                            buyerContact: this.buyerContact,
+                            fileName: this.paymentFileName,
+                            fileData: this.paymentFileBase64
+                        };
 
-                            await fetch(this.scriptURL, {
-                                method: 'POST',
-                                mode: 'no-cors',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            });
-                        }
+                        await fetch(this.scriptURL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
 
                         alert('Order and receipt submitted successfully! Your ticket will be sent to ' + this.buyerContact + ' upon verification.');
                         this.closeEventModal();
