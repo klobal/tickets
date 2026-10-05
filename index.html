@@ -5,244 +5,121 @@
 (() => {
     'use strict';
 
-    const CONFIG = {
-        debuggerThreshold: 150,
-        devtoolsCheckInterval: 1000,
-        sizeThreshold: 180,
-        blockContextMenu: true,
-        blockShortcuts: true
-    };
+    let blocked = false;
 
-    let accessDenied = false;
+    function blockPage() {
+        if (blocked) return;
+        blocked = true;
 
-    function denyAccess(reason = 'Developer inspection tools are not allowed on this page.') {
-        if (accessDenied) return;
-        accessDenied = true;
+        document.open();
+        document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Access Denied</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-        // Stop further checks
-        clearInterval(debuggerTimer);
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+        }
 
-        // Replace page safely
-        document.body.innerHTML = `
-            <div id="access-denied">
-                <div class="denied-card">
-                    <div class="denied-icon">!</div>
-                    <h1>Access Denied</h1>
-                    <p>${reason}</p>
-                </div>
-            </div>
-        `;
+        body {
+            background: #0f172a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
 
-        document.documentElement.style.cssText = `
-            background:#0f172a !important;
-            margin:0 !important;
-            padding:0 !important;
-        `;
+        .box {
+            max-width: 520px;
+            padding: 40px;
+        }
 
-        document.body.style.cssText = `
-            margin:0 !important;
-            background:#0f172a !important;
-        `;
+        h1 {
+            margin-bottom: 15px;
+        }
 
-        const style = document.createElement('style');
+        p {
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Access Denied</h1>
+        <p>
+            Developer inspection tools are not allowed on this page.
+        </p>
+    </div>
+</body>
+</html>
+        `);
 
-        style.textContent = `
-            #access-denied {
-                position:fixed;
-                inset:0;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                background:#0f172a;
-                color:#fff;
-                font-family:Arial,Helvetica,sans-serif;
-                text-align:center;
-                z-index:2147483647;
-            }
-
-            .denied-card {
-                max-width:520px;
-                padding:40px;
-            }
-
-            .denied-icon {
-                width:70px;
-                height:70px;
-                margin:0 auto 25px;
-                border:2px solid #ef4444;
-                border-radius:50%;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                color:#ef4444;
-                font-size:40px;
-                font-weight:bold;
-            }
-
-            .denied-card h1 {
-                margin:0 0 15px;
-                font-size:32px;
-            }
-
-            .denied-card p {
-                margin:0;
-                color:#94a3b8;
-                line-height:1.6;
-                font-size:15px;
-            }
-        `;
-
-        document.head.appendChild(style);
+        document.close();
     }
 
     /*
-     * DevTools detection using debugger timing.
-     *
-     * Important:
-     * This is only a deterrent. JavaScript cannot reliably determine
-     * whether DevTools is open in every browser.
+     * Heuristic 1:
+     * Detect a large difference between the browser's outer
+     * dimensions and its viewport.
      */
-    function checkDebugger() {
-        if (accessDenied) return;
+    function sizeCheck() {
+        if (blocked) return;
+
+        const widthGap =
+            window.outerWidth - window.innerWidth;
+
+        const heightGap =
+            window.outerHeight - window.innerHeight;
+
+        if (
+            widthGap > 200 ||
+            heightGap > 200
+        ) {
+            blockPage();
+        }
+    }
+
+    /*
+     * Heuristic 2:
+     * Debugger timing.
+     */
+    function debuggerCheck() {
+        if (blocked) return;
 
         const start = performance.now();
 
-        // Intentional pause when DevTools debugging is active.
         debugger;
 
         const elapsed = performance.now() - start;
 
-        if (elapsed > CONFIG.debuggerThreshold) {
-            denyAccess();
+        if (elapsed > 200) {
+            blockPage();
         }
     }
 
     /*
-     * Detect large changes between browser viewport and outer window.
-     * This can indicate a docked DevTools panel.
-     *
-     * This check is deliberately conservative to reduce false positives.
+     * Run immediately.
      */
-    function checkWindowDimensions() {
-        if (accessDenied) return;
-
-        const widthDifference =
-            Math.abs(window.outerWidth - window.innerWidth);
-
-        const heightDifference =
-            Math.abs(window.outerHeight - window.innerHeight);
-
-        if (
-            widthDifference > CONFIG.sizeThreshold ||
-            heightDifference > CONFIG.sizeThreshold
-        ) {
-            denyAccess();
-        }
-    }
+    sizeCheck();
+    debuggerCheck();
 
     /*
-     * Disable right-click.
+     * Continue monitoring.
      */
-    if (CONFIG.blockContextMenu) {
-        document.addEventListener('contextmenu', event => {
-            event.preventDefault();
-        });
-    }
-
-    /*
-     * Block common inspection shortcuts.
-     *
-     * This is only a deterrent. Users can still bypass client-side
-     * restrictions.
-     */
-    if (CONFIG.blockShortcuts) {
-        document.addEventListener('keydown', event => {
-
-            // F12
-            if (event.key === 'F12') {
-                event.preventDefault();
-                denyAccess();
-                return;
-            }
-
-            // Ctrl + Shift + I
-            if (
-                event.ctrlKey &&
-                event.shiftKey &&
-                event.key.toLowerCase() === 'i'
-            ) {
-                event.preventDefault();
-                denyAccess();
-                return;
-            }
-
-            // Ctrl + Shift + J
-            if (
-                event.ctrlKey &&
-                event.shiftKey &&
-                event.key.toLowerCase() === 'j'
-            ) {
-                event.preventDefault();
-                denyAccess();
-                return;
-            }
-
-            // Ctrl + Shift + C
-            if (
-                event.ctrlKey &&
-                event.shiftKey &&
-                event.key.toLowerCase() === 'c'
-            ) {
-                event.preventDefault();
-                denyAccess();
-                return;
-            }
-
-            // Ctrl + U
-            if (
-                event.ctrlKey &&
-                event.key.toLowerCase() === 'u'
-            ) {
-                event.preventDefault();
-                denyAccess();
-                return;
-            }
-
-            // Mac equivalents
-            if (
-                event.metaKey &&
-                event.altKey &&
-                (
-                    event.key.toLowerCase() === 'i' ||
-                    event.key.toLowerCase() === 'j'
-                )
-            ) {
-                event.preventDefault();
-                denyAccess();
-                return;
-            }
-        });
-    }
-
-    /*
-     * Check window dimensions when the browser changes size.
-     */
-    window.addEventListener('resize', () => {
-        setTimeout(checkWindowDimensions, 150);
-    });
-
-    /*
-     * Periodic debugger detection.
-     */
-    const debuggerTimer = setInterval(
-        checkDebugger,
-        CONFIG.devtoolsCheckInterval
-    );
-
-    /*
-     * Initial dimension check.
-     */
-    setTimeout(checkWindowDimensions, 1000);
+    setInterval(() => {
+        sizeCheck();
+        debuggerCheck();
+    }, 500);
 
 })();
 </script>
