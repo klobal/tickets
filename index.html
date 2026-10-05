@@ -266,42 +266,41 @@
                                 <span class="text-xs text-amber-500 font-bold">★ 4.9 / 5.0</span>
                             </div>
 
-                            <!-- List of Reviews (With Admin Edit/Delete Controls if Admin is active) -->
+                            <!-- List of Generated/Admin Reviews with Edit/Delete for Admin -->
                             <div class="space-y-3">
                                 <template x-for="review in getEventReviews(activeEvent.id)" :key="review.id">
                                     <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
                                         <div class="flex items-center justify-between text-xs">
                                             <span class="font-bold text-slate-800" x-text="review.author"></span>
-                                            <span class="text-[10px] text-slate-400" x-text="review.time"></span>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-[10px] text-slate-400" x-text="review.time"></span>
+                                                <!-- Admin Edit/Delete buttons for custom reviews -->
+                                                <template x-if="isAdmin && review.isCustom">
+                                                    <div class="flex items-center space-x-1 pl-2 border-l border-slate-200">
+                                                        <button @click="startEditingReview(activeEvent.id, review)" class="text-[10px] text-brand-600 font-bold hover:underline">Edit</button>
+                                                        <button @click="deleteReview(activeEvent.id, review.id)" class="text-[10px] text-rose-600 font-bold hover:underline">Delete</button>
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </div>
                                         <p class="text-xs text-slate-600" x-text="review.text"></p>
-                                        
-                                        <!-- Admin Actions Bar -->
-                                        <template x-if="isAdmin">
-                                            <div class="pt-2 border-t border-slate-100 flex items-center justify-end space-x-2">
-                                                <button @click="startEditReview(activeEvent.id, review)" class="text-[10px] bg-amber-50 text-amber-700 px-2 py-1 rounded font-semibold hover:bg-amber-100">✏️ Edit</button>
-                                                <button @click="deleteReview(activeEvent.id, review.id)" class="text-[10px] bg-rose-50 text-rose-700 px-2 py-1 rounded font-semibold hover:bg-rose-100">🗑️ Delete</button>
-                                            </div>
-                                        </template>
                                     </div>
                                 </template>
                             </div>
 
-                            <!-- Admin Add / Edit Review Form (Appears ONLY when Admin is active) -->
+                            <!-- Admin Comment Injector / Editor Box -->
                             <template x-if="isAdmin">
                                 <div class="mt-4 pt-4 border-t border-slate-200 space-y-3 bg-brand-50 p-4 rounded-xl border border-brand-100">
                                     <div class="flex items-center justify-between">
                                         <span class="text-xs font-bold text-brand-900" x-text="editingReviewId ? '👑 Edit Review' : '👑 Admin Review Injector'"></span>
-                                        <span class="text-[10px] text-brand-600" x-text="editingReviewId ? 'Updating existing review' : 'Adds as a randomized attendee'"></span>
+                                        <button x-show="editingReviewId" @click="cancelEdit()" class="text-[10px] text-rose-600 font-bold hover:underline">Cancel Edit</button>
                                     </div>
-                                    <textarea x-model="newAdminComment" placeholder="Type your review here..." class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none" rows="2"></textarea>
-                                    
-                                    <div class="flex items-center space-x-2">
-                                        <button @click="saveAdminReview(activeEvent.id)" class="px-4 py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 shadow-sm" x-text="editingReviewId ? 'Update Review ✓' : 'Post Review as Attendee →'"></button>
-                                        <template x-if="editingReviewId">
-                                            <button @click="cancelEdit()" class="px-3 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-300">Cancel</button>
-                                        </template>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <input type="text" x-model="adminReviewerName" placeholder="Reviewer Name (e.g. Sarah M.)" class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none">
+                                        <span class="text-[10px] text-slate-500 self-center">Leave blank for random name.</span>
                                     </div>
+                                    <textarea x-model="newAdminComment" placeholder="Type review text here..." class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none" rows="2"></textarea>
+                                    <button @click="saveAdminReview(activeEvent.id)" class="px-4 py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 shadow-sm" x-text="editingReviewId ? 'Update Review ✓' : 'Post Review as Attendee →'"></button>
                                 </div>
                             </template>
                         </div>
@@ -376,32 +375,20 @@
                                     <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
                                         <div class="flex items-center justify-between text-xs">
                                             <span class="font-bold text-slate-800" x-text="review.author"></span>
-                                            <span class="text-[10px] text-slate-400" x-text="review.time"></span>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-[10px] text-slate-400" x-text="review.time"></span>
+                                                <template x-if="isAdmin && review.isCustom">
+                                                    <div class="flex items-center space-x-1 pl-2 border-l border-slate-200">
+                                                        <button @click="startEditingReview(activeEvent.id, review)" class="text-[10px] text-brand-600 font-bold hover:underline">Edit</button>
+                                                        <button @click="deleteReview(activeEvent.id, review.id)" class="text-[10px] text-rose-600 font-bold hover:underline">Delete</button>
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </div>
                                         <p class="text-xs text-slate-600" x-text="review.text"></p>
-                                        
-                                        <template x-if="isAdmin">
-                                            <div class="pt-2 border-t border-slate-100 flex items-center justify-end space-x-2">
-                                                <button @click="startEditReview(activeEvent.id, review)" class="text-[10px] bg-amber-50 text-amber-700 px-2 py-1 rounded font-semibold">✏️ Edit</button>
-                                                <button @click="deleteReview(activeEvent.id, review.id)" class="text-[10px] bg-rose-50 text-rose-700 px-2 py-1 rounded font-semibold">🗑️ Delete</button>
-                                            </div>
-                                        </template>
                                     </div>
                                 </template>
                             </div>
-
-                            <template x-if="isAdmin">
-                                <div class="mt-3 pt-3 border-t border-slate-200 space-y-2 bg-brand-50 p-3 rounded-xl">
-                                    <span class="text-xs font-bold text-brand-900" x-text="editingReviewId ? '👑 Edit Review' : '👑 Add Review'"></span>
-                                    <textarea x-model="newAdminComment" placeholder="Type your review..." class="w-full p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none" rows="2"></textarea>
-                                    <div class="flex space-x-2">
-                                        <button @click="saveAdminReview(activeEvent.id)" class="px-3 py-1.5 bg-brand-600 text-white text-xs font-bold rounded-lg" x-text="editingReviewId ? 'Update ✓' : 'Post →'"></button>
-                                        <template x-if="editingReviewId">
-                                            <button @click="cancelEdit()" class="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Cancel</button>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
                         </div>
 
                         <!-- STEP 1: PAYMENT INSTRUCTIONS -->
@@ -441,7 +428,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT WITH FULL ADMIN CRUD (CREATE, READ, UPDATE, DELETE) FOR REVIEWS -->
+    <!-- SCRIPT WITH EDITABLE ADMIN REVIEWS & SUGGESTED NAMES -->
     <script>
         function eventApp() {
             return {
@@ -450,6 +437,7 @@
                 directEventMode: false,
                 isAdmin: false,
                 newAdminComment: '',
+                adminReviewerName: '',
                 editingReviewId: null,
                 searchQuery: '',
                 selectedCategory: '',
@@ -464,13 +452,13 @@
 
                 categories: ['Music & Concerts', 'Tech & AI', 'Business & Networking', 'Sports', 'Arts & Theatre', 'Festivals'],
                 events: [],
-                customReviews: {}, // Stores injected reviews per event ID in localStorage
+                customReviews: {},
 
                 toggleAdminMode() {
                     const pass = prompt('Enter Admin Passcode:');
                     if (pass === 'admin123' || pass === 'klobal') {
                         this.isAdmin = true;
-                        alert('Admin Mode Activated! You can now add, edit, and delete attendee reviews.');
+                        alert('Admin Mode Activated! You can now add, edit, or delete custom attendee reviews and suggest custom reviewer names.');
                     } else if (pass !== null) {
                         alert('Incorrect passcode.');
                     }
@@ -479,18 +467,18 @@
                 getEventReviews(eventId) {
                     const defaultReviews = {
                         1: [
-                            { id: 101, author: 'Brian K.', time: '2 days ago', text: 'Incredible lineup of speakers. Received my M-Pesa ticket confirmation within 5 minutes!' },
-                            { id: 102, author: 'Samantha W.', time: '3 days ago', text: 'Loved the hardware exhibition booths. Well organized event.' }
+                            { id: 101, author: 'Brian K.', time: '2 days ago', text: 'Incredible lineup of speakers. Received my M-Pesa ticket confirmation within 5 minutes!', isCustom: false },
+                            { id: 102, author: 'Samantha W.', time: '3 days ago', text: 'Loved the hardware exhibition booths. Well organized event.', isCustom: false }
                         ],
                         2: [
-                            { id: 201, author: 'Marcus L.', time: 'Yesterday', text: 'The zero-trust security session was worth every penny. Super smooth wire transfer checkout.' },
-                            { id: 202, author: 'Elena R.', time: '4 days ago', text: 'Top-tier tech insights. Got my badge emailed instantly after submitting the receipt.' }
+                            { id: 201, author: 'Marcus L.', time: 'Yesterday', text: 'The zero-trust security session was worth every penny. Super smooth wire transfer checkout.', isCustom: false },
+                            { id: 202, author: 'Elena R.', time: '4 days ago', text: 'Top-tier tech insights. Got my badge emailed instantly after submitting the receipt.', isCustom: false }
                         ]
                     };
 
                     let list = defaultReviews[eventId] || [
-                        { id: 901, author: 'David M.', time: '1 day ago', text: 'Seamless booking process and great communication from the organizers.' },
-                        { id: 902, author: 'Akiho T.', time: '3 days ago', text: 'Attended last year and this year looks even better. Highly recommended!' }
+                        { id: 901, author: 'David M.', time: '1 day ago', text: 'Seamless booking process and great communication from the organizers.', isCustom: false },
+                        { id: 902, author: 'Akiho T.', time: '3 days ago', text: 'Attended last year and this year looks even better. Highly recommended!', isCustom: false }
                     ];
 
                     if (this.customReviews[eventId]) {
@@ -499,61 +487,57 @@
                     return list;
                 },
 
-                startEditReview(eventId, review) {
-                    this.editingReviewId = review.id;
-                    this.newAdminComment = review.text;
-                },
-
-                cancelEdit() {
-                    this.editingReviewId = null;
-                    this.newAdminComment = '';
-                },
-
                 saveAdminReview(eventId) {
                     if (!this.newAdminComment.trim()) return;
+
+                    const attendeeNames = ['Jessica M.', 'Kevin O.', 'Hassan A.', 'Grace N.', 'Liam P.', 'Chidi K.', 'Yuki S.', 'Chloe B.'];
+                    const chosenName = this.adminReviewerName.trim() ? this.adminReviewerName.trim() : attendeeNames[Math.floor(Math.random() * attendeeNames.length)];
 
                     if (!this.customReviews[eventId]) {
                         this.customReviews[eventId] = [];
                     }
 
                     if (this.editingReviewId) {
-                        // UPDATE EXISTING REVIEW
-                        const found = this.customReviews[eventId].find(r => r.id === this.editingReviewId);
-                        if (found) {
-                            found.text = this.newAdminComment.trim();
-                        } else {
-                            // If it's a default review being edited, store it as a custom override or new entry
-                            this.customReviews[eventId].unshift({
-                                id: Date.now(),
-                                author: 'Verified Attendee',
-                                time: 'Edited just now',
-                                text: this.newAdminComment.trim()
-                            });
+                        // Edit existing review
+                        const rev = this.customReviews[eventId].find(r => r.id === this.editingReviewId);
+                        if (rev) {
+                            rev.text = this.newAdminComment.trim();
+                            rev.author = chosenName;
                         }
                         this.editingReviewId = null;
                         alert('Review updated successfully!');
                     } else {
-                        // CREATE NEW REVIEW
-                        const attendeeNames = ['Jessica M.', 'Kevin O.', 'Hassan A.', 'Grace N.', 'Liam P.', 'Chidi K.', 'Yuki S.', 'Chloe B.'];
-                        const randomName = attendeeNames[Math.floor(Math.random() * attendeeNames.length)];
-
+                        // Create new custom review
                         const newReview = {
                             id: Date.now(),
-                            author: randomName,
+                            author: chosenName,
                             time: 'Just now',
-                            text: this.newAdminComment.trim()
+                            text: this.newAdminComment.trim(),
+                            isCustom: true
                         };
-
                         this.customReviews[eventId].unshift(newReview);
-                        alert('Review posted successfully as ' + randomName + '!');
+                        alert('Review posted successfully as ' + chosenName + '!');
                     }
 
                     localStorage.setItem('eventsphere_reviews', JSON.stringify(this.customReviews));
                     this.newAdminComment = '';
+                    this.adminReviewerName = '';
+                },
+
+                startEditingReview(eventId, review) {
+                    this.editingReviewId = review.id;
+                    this.newAdminComment = review.text;
+                    this.adminReviewerName = review.author;
+                },
+
+                cancelEdit() {
+                    this.editingReviewId = null;
+                    this.newAdminComment = '';
+                    this.adminReviewerName = '';
                 },
 
                 deleteReview(eventId, reviewId) {
-                    if (confirm('Are you sure you want to delete this review?')) {
+                    if (confirm('Are you sure you want to delete this custom review?')) {
                         if (this.customReviews[eventId]) {
                             this.customReviews[eventId] = this.customReviews[eventId].filter(r => r.id !== reviewId);
                             localStorage.setItem('eventsphere_reviews', JSON.stringify(this.customReviews));
