@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-50">
 <head>
+    <script>
+    (function() {
+        const threshold = 160;
+        const detectDevTools = () => {
+            const widthCheck = window.outerWidth - window.innerWidth > threshold;
+            const heightCheck = window.outerHeight - window.innerHeight > threshold;
+            if (widthCheck || heightCheck) {
+                document.documentElement.innerHTML = "<html><body style='background:#0f172a;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;text-align:center;'><div><h1>Access Denied</h1><p>Developer inspection tools are not allowed on this page.</p></div></body></html>";
+            }
+        };
+        setInterval(detectDevTools, 300);
+        detectDevTools();
+    })();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventSphere — Instant Manual Ticketing & Global Discovery</title>
