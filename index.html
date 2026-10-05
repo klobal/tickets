@@ -205,14 +205,13 @@
                     <div class="relative h-48 w-full bg-slate-100 overflow-hidden">
                         <img :src="event.image" alt="Event" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-slate-900" x-text="event.category"></div>
-                        <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold text-white" x-text="event.priceTag"></div>
+                        <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold text-white" x-text="getPrimaryPriceTag(event)"></div>
                     </div>
                     <div class="p-5 flex flex-col flex-grow justify-between space-y-4">
                         <div class="space-y-2">
                             <div class="flex items-center justify-between">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                                      :class="getInventory(event).remaining <= 12 ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
-                                      x-text="getInventory(event).remaining <= 12 ? '🔥 Only ' + getInventory(event).remaining + ' left (' + getInventory(event).total + ' total)' : '🟢 ' + getInventory(event).remaining + ' of ' + getInventory(event).total + ' tickets left'">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                      x-text="getEventTiers(event).length + ' Ticket Tiers Available'">
                                 </span>
                                 <span class="text-[10px] text-slate-400 uppercase font-semibold" x-text="event.region"></span>
                             </div>
@@ -226,7 +225,7 @@
                             <p class="text-slate-500 text-xs line-clamp-2" x-text="event.description"></p>
                         </div>
                         <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
-                            <span class="text-brand-600 group-hover:underline">Instant Checkout →</span>
+                            <span class="text-brand-600 group-hover:underline">Select Ticket Tier →</span>
                             <button @click.stop="copyEventLink(event.id, $event)" class="text-slate-400 hover:text-brand-600 text-[11px] flex items-center space-x-1 bg-slate-50 hover:bg-brand-50 px-2.5 py-1 rounded-lg border border-slate-200 transition">
                                 <span>🔗 Copy Link</span>
                             </button>
@@ -249,14 +248,32 @@
                         <div class="space-y-3">
                             <div class="flex items-center justify-between flex-wrap gap-2">
                                 <span class="px-3.5 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600" x-text="activeEvent.category"></span>
-                                <span class="px-3 py-1 rounded-full text-xs font-bold"
-                                      :class="getInventory(activeEvent).remaining <= 12 ? 'bg-amber-100 text-amber-800 animate-pulse' : 'bg-emerald-50 text-emerald-700'"
-                                      x-text="getInventory(activeEvent).remaining <= 12 ? '🔥 Selling Fast: Only ' + getInventory(activeEvent).remaining + ' tickets left!' : '✓ Available: ' + getInventory(activeEvent).remaining + ' of ' + getInventory(activeEvent).total + ' tickets remaining'">
-                                </span>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700" x-text="'Selected Tier: ' + selectedTier.name"></span>
                             </div>
                             <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2" x-text="activeEvent.title"></h2>
                             <p class="text-sm text-slate-500 mt-1" x-text="activeEvent.date + ' • ' + activeEvent.location"></p>
                             <p class="text-xs text-slate-600 mt-3 leading-relaxed" x-text="activeEvent.description"></p>
+                        </div>
+
+                        <!-- TICKET TIER SELECTOR CARDS -->
+                        <div class="space-y-3">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Select Your Ticket Tier:</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <template x-for="tier in getEventTiers(activeEvent.id)" :key="tier.name">
+                                    <div @click="selectedTier = tier"
+                                         :class="selectedTier.name === tier.name ? 'border-brand-600 bg-brand-50/60 ring-2 ring-brand-600' : 'border-slate-200 bg-white hover:border-slate-300'"
+                                         class="p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-bold text-slate-900" x-text="tier.name"></span>
+                                            <span class="text-xs font-extrabold text-brand-600" x-text="tier.price"></span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-[11px] text-slate-500">
+                                            <span x-text="'🟢 ' + tier.remaining + ' left'"></span>
+                                            <span x-text="selectedTier.name === tier.name ? '✓ Selected' : 'Select'"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- REVIEWS & ATTENDEE COMMENTS SECTION -->
@@ -266,7 +283,6 @@
                                 <span class="text-xs text-amber-500 font-bold">★ 4.9 / 5.0</span>
                             </div>
 
-                            <!-- List of Reviews -->
                             <div class="space-y-3">
                                 <template x-for="review in getEventReviews(activeEvent.id)" :key="review.id">
                                     <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-1 relative">
@@ -274,7 +290,6 @@
                                             <span class="font-bold text-slate-800" x-text="review.author"></span>
                                             <div class="flex items-center space-x-2">
                                                 <span class="text-[10px] text-slate-400" x-text="review.time"></span>
-                                                <!-- Delete button visible only when Admin is active -->
                                                 <template x-if="isAdmin">
                                                     <button @click="deleteAdminReview(activeEvent.id, review.id)" class="text-[10px] text-red-500 hover:text-red-700 font-bold px-1.5 py-0.5 rounded bg-red-50">Delete</button>
                                                 </template>
@@ -285,27 +300,27 @@
                                 </template>
                             </div>
 
-                            <!-- Admin Comment Injector Box -->
+                            <!-- Admin Comment & Tier Manager Box -->
                             <template x-if="isAdmin">
                                 <div class="mt-4 pt-4 border-t border-slate-200 space-y-3 bg-brand-50 p-4 rounded-xl border border-brand-100">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-bold text-brand-900">👑 Admin Review Customizer</span>
-                                        <span class="text-[10px] text-brand-600">Suggest custom reviewer name & comment</span>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <input type="text" x-model="adminReviewerName" placeholder="Suggested Reviewer Name (e.g., Sarah M., Dr. Kamau)" class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none">
-                                        <textarea x-model="newAdminComment" placeholder="Type your custom review here..." class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none" rows="2"></textarea>
-                                    </div>
-                                    <button @click="postAdminReview(activeEvent.id)" class="w-full py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 shadow-sm">Publish Custom Review →</button>
-
-                                    <!-- Admin Ticket Inventory Editor Box -->
-                                    <div class="mt-4 pt-4 border-t border-brand-200 space-y-2">
-                                        <span class="text-[11px] font-bold text-brand-900 block">⚙️ Override Ticket Inventory (X of Y)</span>
-                                        <div class="grid grid-cols-2 gap-2">
-                                            <input type="number" x-model.number="adminRemaining" placeholder="Remaining (X)" class="p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
-                                            <input type="number" x-model.number="adminTotal" placeholder="Total (Y)" class="p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                    <span class="text-xs font-bold text-brand-900 block">👑 Admin Customizer: Add Tier or Review</span>
+                                    
+                                    <!-- Add Tier Sub-Form -->
+                                    <div class="space-y-2 p-3 bg-white rounded-lg border border-brand-200">
+                                        <span class="text-[11px] font-bold text-slate-700 block">➕ Add New Ticket Tier</span>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <input type="text" x-model="newTierName" placeholder="Tier Name (e.g., VVIP)" class="p-2 text-xs border rounded">
+                                            <input type="text" x-model="newTierPrice" placeholder="Price (e.g., $150)" class="p-2 text-xs border rounded">
+                                            <input type="number" x-model.number="newTierRemaining" placeholder="Qty Left" class="p-2 text-xs border rounded">
                                         </div>
-                                        <button @click="saveAdminInventory(activeEvent.id)" class="w-full py-2 bg-indigo-700 text-white text-xs font-bold rounded-lg hover:bg-indigo-800 shadow-sm">Save Ticket Count (X of Y)</button>
+                                        <button @click="addTicketTier(activeEvent.id)" class="w-full py-1.5 bg-brand-600 text-white text-xs font-bold rounded hover:bg-brand-700">Add Tier to Event</button>
+                                    </div>
+
+                                    <!-- Add Review Sub-Form -->
+                                    <div class="space-y-2 pt-2">
+                                        <input type="text" x-model="adminReviewerName" placeholder="Reviewer Name (e.g., Sarah M.)" class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg">
+                                        <textarea x-model="newAdminComment" placeholder="Custom review comment..." class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg" rows="2"></textarea>
+                                        <button @click="postAdminReview(activeEvent.id)" class="w-full py-2 bg-indigo-700 text-white text-xs font-bold rounded-lg hover:bg-indigo-800">Publish Custom Review →</button>
                                     </div>
                                 </div>
                             </template>
@@ -314,18 +329,15 @@
                         <!-- STEP 1: PAYMENT INSTRUCTIONS -->
                         <div class="p-5 bg-indigo-50/75 rounded-2xl border border-indigo-100 space-y-3">
                             <div class="flex items-center justify-between">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900">Step 1: Send Payment</h4>
-                                <span class="text-xs font-extrabold text-indigo-600 bg-white px-3 py-1 rounded-full shadow-sm" x-text="activeEvent.priceTag"></span>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900" x-text="'Step 1: Send Payment for ' + selectedTier.name"></h4>
+                                <span class="text-xs font-extrabold text-indigo-600 bg-white px-3 py-1 rounded-full shadow-sm" x-text="selectedTier.price"></span>
                             </div>
-                            <p class="text-xs sm:text-sm text-slate-800 font-mono bg-white p-4 rounded-xl border border-indigo-100 shadow-inner" x-text="activeEvent.paymentInstructions"></p>
+                            <p class="text-xs sm:text-sm text-slate-800 font-mono bg-white p-4 rounded-xl border border-indigo-100 shadow-inner" x-text="activeEvent.paymentInstructions + ' (Amount: ' + selectedTier.price + ')'"></p>
                         </div>
 
                         <!-- STEP 2: SUBMIT PROOF -->
                         <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Step 2: Submit Ticket Delivery Info & Receipt</h4>
-                            <p class="text-xs text-slate-500 leading-relaxed">
-                                Once you have completed the payment on your device, enter your contact details and upload your payment screenshot. Our team will verify and dispatch your ticket instantly!
-                            </p>
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Your Email or WhatsApp Phone Number</label>
@@ -361,13 +373,28 @@
                         <div class="space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600" x-text="activeEvent.category"></span>
-                                <span class="px-3 py-1 rounded-full text-xs font-bold"
-                                      :class="getInventory(activeEvent).remaining <= 12 ? 'bg-amber-100 text-amber-800 animate-pulse' : 'bg-emerald-50 text-emerald-700'"
-                                      x-text="getInventory(activeEvent).remaining <= 12 ? '🔥 Only ' + getInventory(activeEvent).remaining + ' tickets left!' : '✓ ' + getInventory(activeEvent).remaining + ' of ' + getInventory(activeEvent).total + ' tickets remaining'">
-                                </span>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700" x-text="'Selected: ' + selectedTier.name"></span>
                             </div>
                             <h2 class="text-2xl font-extrabold text-slate-900 mt-2" x-text="activeEvent.title"></h2>
                             <p class="text-xs text-slate-500 mt-1" x-text="activeEvent.date + ' • ' + activeEvent.location"></p>
+                        </div>
+
+                        <!-- TICKET TIER SELECTOR IN MODAL -->
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Select Ticket Tier:</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <template x-for="tier in getEventTiers(activeEvent.id)" :key="tier.name">
+                                    <div @click="selectedTier = tier"
+                                         :class="selectedTier.name === tier.name ? 'border-brand-600 bg-brand-50/60 ring-2 ring-brand-600' : 'border-slate-200 bg-white'"
+                                         class="p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between space-y-1">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-bold text-slate-800" x-text="tier.name"></span>
+                                            <span class="font-extrabold text-brand-600" x-text="tier.price"></span>
+                                        </div>
+                                        <span class="text-[10px] text-slate-500" x-text="'🟢 ' + tier.remaining + ' left'"></span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- REVIEWS IN MODAL -->
@@ -393,27 +420,25 @@
                                 </template>
                             </div>
 
-                            <!-- Admin Comment & Inventory Customizer Box inside Modal -->
+                            <!-- Admin Manager Box in Modal -->
                             <template x-if="isAdmin">
                                 <div class="mt-4 pt-4 border-t border-slate-200 space-y-3 bg-brand-50 p-4 rounded-xl border border-brand-100">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-bold text-brand-900">👑 Admin Review Customizer</span>
-                                        <span class="text-[10px] text-brand-600">Add reviewer name & comment</span>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <input type="text" x-model="adminReviewerName" placeholder="Suggested Reviewer Name (e.g., Sarah M.)" class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none">
-                                        <textarea x-model="newAdminComment" placeholder="Type your custom review here..." class="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-600 focus:outline-none" rows="2"></textarea>
-                                    </div>
-                                    <button @click="postAdminReview(activeEvent.id)" class="w-full py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 shadow-sm">Publish Custom Review →</button>
-
-                                    <!-- Admin Ticket Inventory Editor Box -->
-                                    <div class="mt-4 pt-4 border-t border-brand-200 space-y-2">
-                                        <span class="text-[11px] font-bold text-brand-900 block">⚙️ Override Ticket Inventory (X of Y)</span>
-                                        <div class="grid grid-cols-2 gap-2">
-                                            <input type="number" x-model.number="adminRemaining" placeholder="Remaining (X)" class="p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
-                                            <input type="number" x-model.number="adminTotal" placeholder="Total (Y)" class="p-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                    <span class="text-xs font-bold text-brand-900 block">👑 Admin Customizer: Add Tier or Review</span>
+                                    
+                                    <div class="space-y-2 p-3 bg-white rounded-lg border border-brand-200">
+                                        <span class="text-[11px] font-bold text-slate-700 block">➕ Add New Ticket Tier</span>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <input type="text" x-model="newTierName" placeholder="Tier Name" class="p-1.5 text-xs border rounded">
+                                            <input type="text" x-model="newTierPrice" placeholder="Price" class="p-1.5 text-xs border rounded">
+                                            <input type="number" x-model.number="newTierRemaining" placeholder="Qty" class="p-1.5 text-xs border rounded">
                                         </div>
-                                        <button @click="saveAdminInventory(activeEvent.id)" class="w-full py-2 bg-indigo-700 text-white text-xs font-bold rounded-lg hover:bg-indigo-800 shadow-sm">Save Ticket Count (X of Y)</button>
+                                        <button @click="addTicketTier(activeEvent.id)" class="w-full py-1.5 bg-brand-600 text-white text-xs font-bold rounded hover:bg-brand-700">Add Tier</button>
+                                    </div>
+
+                                    <div class="space-y-2 pt-2">
+                                        <input type="text" x-model="adminReviewerName" placeholder="Reviewer Name" class="w-full p-2 text-xs bg-white border border-slate-200 rounded-lg">
+                                        <textarea x-model="newAdminComment" placeholder="Review comment..." class="w-full p-2 text-xs bg-white border border-slate-200 rounded-lg" rows="2"></textarea>
+                                        <button @click="postAdminReview(activeEvent.id)" class="w-full py-2 bg-indigo-700 text-white text-xs font-bold rounded-lg">Publish Review</button>
                                     </div>
                                 </div>
                             </template>
@@ -422,18 +447,14 @@
                         <!-- STEP 1: PAYMENT INSTRUCTIONS -->
                         <div class="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-2">
                             <div class="flex items-center justify-between">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900">Step 1: Send Payment</h4>
-                                <span class="text-xs font-extrabold text-indigo-600 bg-white px-2.5 py-0.5 rounded-full shadow-sm" x-text="activeEvent.priceTag"></span>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900" x-text="'Step 1: Payment (' + selectedTier.name + ' - ' + selectedTier.price + ')'"></h4>
                             </div>
-                            <p class="text-xs text-slate-700 font-mono bg-white p-3.5 rounded-xl border border-indigo-100 shadow-inner" x-text="activeEvent.paymentInstructions"></p>
+                            <p class="text-xs text-slate-700 font-mono bg-white p-3.5 rounded-xl border border-indigo-100 shadow-inner" x-text="activeEvent.paymentInstructions + ' (Amount: ' + selectedTier.price + ')'"></p>
                         </div>
 
                         <!-- STEP 2: SUBMIT PROOF -->
                         <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Step 2: Submit Ticket Delivery Info & Receipt</h4>
-                            <p class="text-[11px] text-slate-500 leading-relaxed">
-                                Once you have completed the payment on your device, enter your contact details and upload your payment screenshot. Our team will verify and dispatch your ticket instantly!
-                            </p>
                             <div class="space-y-3">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Your Email or WhatsApp Phone Number</label>
@@ -456,7 +477,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT WITH ADMIN INVENTORY OVERRIDE -->
+    <!-- SCRIPT WITH TIERED PRICING ENGINE -->
     <script>
         function eventApp() {
             return {
@@ -466,8 +487,10 @@
                 isAdmin: false,
                 adminReviewerName: '',
                 newAdminComment: '',
-                adminRemaining: '',
-                adminTotal: '',
+                newTierName: '',
+                newTierPrice: '',
+                newTierRemaining: '',
+                selectedTier: { name: 'Regular', price: 'Free', remaining: 50 },
                 searchQuery: '',
                 selectedCategory: '',
                 selectedRegion: '',
@@ -482,16 +505,70 @@
                 categories: ['Music & Concerts', 'Tech & AI', 'Business & Networking', 'Sports', 'Arts & Theatre', 'Festivals'],
                 events: [],
                 customReviews: {},
-                customInventory: {},
+                customTiers: {},
 
                 toggleAdminMode() {
                     const pass = prompt('Enter Admin Passcode:');
                     if (pass === 'admin123' || pass === 'klobal') {
                         this.isAdmin = true;
-                        alert('Admin Mode Activated! You can now edit ticket counts (X of Y) and manage reviews.');
+                        alert('Admin Mode Activated! You can now add multiple ticket tiers with custom pricing.');
                     } else if (pass !== null) {
                         alert('Incorrect passcode.');
                     }
+                },
+
+                getEventTiers(eventId) {
+                    const defaultTiers = {
+                        1: [
+                            { name: 'Regular', price: '$20 / KES 2,500', remaining: 45 },
+                            { name: 'VIP', price: '$50 / KES 6,500', remaining: 12 },
+                            { name: 'VVIP Table', price: '$150 / KES 19,500', remaining: 4 }
+                        ],
+                        2: [
+                            { name: 'Standard Pass', price: 'Free / RSVP', remaining: 80 },
+                            { name: 'All-Access VIP', price: '$75 / KES 9,800', remaining: 15 }
+                        ]
+                    };
+
+                    let tiers = defaultTiers[eventId] || [
+                        { name: 'Regular', price: '$25 / KES 3,200', remaining: 50 },
+                        { name: 'VIP', price: '$60 / KES 7,800', remaining: 10 }
+                    ];
+
+                    if (this.customTiers[eventId]) {
+                        tiers = [...this.customTiers[eventId], ...tiers];
+                    }
+                    return tiers;
+                },
+
+                getPrimaryPriceTag(event) {
+                    if (!event || !event.id) return 'From $20';
+                    const tiers = this.getEventTiers(event.id);
+                    return tiers.length > 0 ? 'From ' + tiers[0].price : (event.priceTag || 'Paid');
+                },
+
+                addTicketTier(eventId) {
+                    if (!this.newTierName.trim() || !this.newTierPrice.trim()) {
+                        alert('Please fill in both the tier name and price.');
+                        return;
+                    }
+
+                    const newTier = {
+                        name: this.newTierName.trim(),
+                        price: this.newTierPrice.trim(),
+                        remaining: parseInt(this.newTierRemaining) || 20
+                    };
+
+                    if (!this.customTiers[eventId]) {
+                        this.customTiers[eventId] = [];
+                    }
+                    this.customTiers[eventId].push(newTier);
+                    localStorage.setItem('eventsphere_tiers', JSON.stringify(this.customTiers));
+
+                    this.newTierName = '';
+                    this.newTierPrice = '';
+                    this.newTierRemaining = '';
+                    alert('New ticket tier added successfully!');
                 },
 
                 getEventReviews(eventId) {
@@ -499,16 +576,11 @@
                         1: [
                             { id: 101, author: 'Brian K.', time: '2 days ago', text: 'Incredible lineup of speakers. Received my M-Pesa ticket confirmation within 5 minutes!' },
                             { id: 102, author: 'Samantha W.', time: '3 days ago', text: 'Loved the hardware exhibition booths. Well organized event.' }
-                        ],
-                        2: [
-                            { id: 201, author: 'Marcus L.', time: 'Yesterday', text: 'The zero-trust security session was worth every penny. Super smooth wire transfer checkout.' },
-                            { id: 202, author: 'Elena R.', time: '4 days ago', text: 'Top-tier tech insights. Got my badge emailed instantly after submitting the receipt.' }
                         ]
                     };
 
                     let list = defaultReviews[eventId] || [
-                        { id: 901, author: 'David M.', time: '1 day ago', text: 'Seamless booking process and great communication from the organizers.' },
-                        { id: 902, author: 'Akiho T.', time: '3 days ago', text: 'Attended last year and this year looks even better. Highly recommended!' }
+                        { id: 901, author: 'David M.', time: '1 day ago', text: 'Seamless booking process and great communication from the organizers.' }
                     ];
 
                     if (this.customReviews[eventId]) {
@@ -523,7 +595,7 @@
                         return;
                     }
 
-                    const attendeeNames = ['Jessica M.', 'Kevin O.', 'Hassan A.', 'Grace N.', 'Liam P.', 'Chidi K.', 'Yuki S.', 'Chloe B.'];
+                    const attendeeNames = ['Jessica M.', 'Kevin O.', 'Hassan A.', 'Grace N.', 'Liam P.', 'Chidi K.'];
                     const chosenName = (this.adminReviewerName && this.adminReviewerName.trim()) 
                         ? this.adminReviewerName.trim() 
                         : attendeeNames[Math.floor(Math.random() * attendeeNames.length)];
@@ -539,17 +611,15 @@
                         this.customReviews[eventId] = [];
                     }
                     this.customReviews[eventId].unshift(newReview);
-                    
                     localStorage.setItem('eventsphere_reviews', JSON.stringify(this.customReviews));
 
                     this.newAdminComment = '';
                     this.adminReviewerName = '';
-                    
-                    alert('Custom review successfully published as ' + chosenName + '!');
+                    alert('Custom review published successfully as ' + chosenName + '!');
                 },
 
                 deleteAdminReview(eventId, reviewId) {
-                    if (confirm('Are you sure you want to delete this review?')) {
+                    if (confirm('Delete this review?')) {
                         if (this.customReviews[eventId]) {
                             this.customReviews[eventId] = this.customReviews[eventId].filter(r => r.id !== reviewId);
                             localStorage.setItem('eventsphere_reviews', JSON.stringify(this.customReviews));
@@ -557,41 +627,11 @@
                     }
                 },
 
-                saveAdminInventory(eventId) {
-                    const rem = parseInt(this.adminRemaining);
-                    const tot = parseInt(this.adminTotal);
-
-                    if (isNaN(rem) || isNaN(tot)) {
-                        alert('Please enter valid numeric values for remaining and total tickets.');
-                        return;
-                    }
-                    if (rem > tot) {
-                        alert('Remaining tickets cannot exceed total tickets.');
-                        return;
-                    }
-
-                    if (!this.customInventory) this.customInventory = {};
-                    this.customInventory[eventId] = { remaining: rem, total: tot };
-                    localStorage.setItem('eventsphere_inventory', JSON.stringify(this.customInventory));
-
-                    this.adminRemaining = '';
-                    this.adminTotal = '';
-                    alert('Ticket count successfully updated to ' + rem + ' of ' + tot + ' remaining!');
-                },
-
                 getInventory(event) {
                     if (!event || !event.id) return { remaining: 15, total: 100 };
-                    // Return admin override if saved
-                    if (this.customInventory && this.customInventory[event.id]) {
-                        return this.customInventory[event.id];
-                    }
-                    const baseTotal = 80 + ((Number(event.id) * 37) % 150);
-                    const now = new Date();
-                    const daySeed = now.getDate();
-                    const hourSeed = now.getHours();
-                    const soldCount = ((Number(event.id) * 19 + daySeed * 7 + hourSeed) % (baseTotal - 12));
-                    const remaining = Math.max(5, baseTotal - soldCount);
-                    return { remaining: remaining, total: baseTotal };
+                    const tiers = this.getEventTiers(event.id);
+                    const totalRem = tiers.reduce((acc, t) => acc + (t.remaining || 10), 0);
+                    return { remaining: totalRem, total: totalRem + 50 };
                 },
 
                 get availableRegions() {
@@ -600,15 +640,11 @@
                 },
 
                 async init() {
-                    const savedReviews = localStorage.getItem('eventsphere_reviews');
-                    if (savedReviews) {
-                        try { this.customReviews = JSON.parse(savedReviews); } catch(e) {}
-                    }
+                    const savedRev = localStorage.getItem('eventsphere_reviews');
+                    if (savedRev) { try { this.customReviews = JSON.parse(savedRev); } catch(e) {} }
 
-                    const savedInv = localStorage.getItem('eventsphere_inventory');
-                    if (savedInv) {
-                        try { this.customInventory = JSON.parse(savedInv); } catch(e) {}
-                    }
+                    const savedTiers = localStorage.getItem('eventsphere_tiers');
+                    if (savedTiers) { try { this.customTiers = JSON.parse(savedTiers); } catch(e) {} }
 
                     await this.fetchLiveEvents();
                     this.checkURLParams();
@@ -623,7 +659,7 @@
                             this.events = data;
                         }
                     } catch (e) {
-                        console.error('Error fetching live events from Google Sheet:', e);
+                        console.error('Error fetching live events:', e);
                     } finally {
                         this.loading = false;
                     }
@@ -637,6 +673,8 @@
                         if (found) {
                             this.activeEvent = found;
                             this.directEventMode = true;
+                            const tiers = this.getEventTiers(found.id);
+                            if (tiers.length > 0) this.selectedTier = tiers[0];
                         }
                     }
                 },
@@ -678,7 +716,7 @@
                         const payload = {
                             action: 'submitOrder',
                             eventId: this.activeEvent.id,
-                            eventTitle: this.activeEvent.title,
+                            eventTitle: this.activeEvent.title + ' (' + this.selectedTier.name + ' - ' + this.selectedTier.price + ')',
                             buyerContact: this.buyerContact,
                             fileName: this.paymentFileName,
                             fileData: this.paymentFileBase64
@@ -691,7 +729,7 @@
                             body: JSON.stringify(payload)
                         });
 
-                        alert('Payment proof submitted successfully! Your ticket will be verified and dispatched to ' + this.buyerContact + ' shortly.');
+                        alert('Order submitted successfully for ' + this.selectedTier.name + '! Confirmation sent to ' + this.buyerContact);
                         this.resetAllFilters();
                     } catch (e) {
                         alert('Submission failed. Please try again.');
@@ -704,14 +742,12 @@
                 get filteredEvents() {
                     return this.events.filter(event => {
                         const q = this.searchQuery.toLowerCase().trim();
-                        
                         const matchesQuery = q === '' || 
                             (event.title && event.title.toLowerCase().includes(q)) ||
                             (event.location && event.location.toLowerCase().includes(q)) ||
                             (event.category && event.category.toLowerCase().includes(q)) ||
                             (event.organizer && event.organizer.toLowerCase().includes(q)) ||
-                            (event.region && event.region.toLowerCase().includes(q)) ||
-                            (event.description && event.description.includes(q));
+                            (event.region && event.region.toLowerCase().includes(q));
 
                         const matchesCategory = this.selectedCategory === '' || 
                             (event.category && event.category.toLowerCase().trim() === this.selectedCategory.toLowerCase().trim());
@@ -734,6 +770,8 @@
 
                 openEventModal(event) {
                     this.activeEvent = event;
+                    const tiers = this.getEventTiers(event.id);
+                    if (tiers.length > 0) this.selectedTier = tiers[0];
                     this.buyerContact = '';
                     this.paymentFileBase64 = null;
                     this.paymentFileName = '';
