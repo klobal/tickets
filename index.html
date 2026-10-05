@@ -4,6 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventSphere — Instant Manual Ticketing & Global Discovery</title>
+    <script>
+    // Disable right-click context menu
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    // Disable keyboard shortcuts for inspecting (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
+    document.addEventListener('keydown', event => {
+        if (
+            event.key === 'F12' || 
+            (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J' || event.key === 'C')) || 
+            (event.ctrlKey && event.key === 'U')
+        ) {
+            event.preventDefault();
+            alert('Action disabled by administrator.');
+        }
+    });
+
+    // Debugger trap to freeze or detect console opening
+    setInterval(() => {
+        const before = new Date().getTime();
+        debugger;
+        const after = new Date().getTime();
+        if (after - before > 100) {
+            document.body.innerHTML = "<h1>Access Denied: Inspection Tools Detected</h1>";
+        }
+    }, 1000);
+</script>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
