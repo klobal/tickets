@@ -630,23 +630,24 @@
                 },
 
                 getEventTiers(eventOrId) {
-                    const eventId = (typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId;
-                    
-                    if (this.customTiers && this.customTiers[eventId] && this.customTiers[eventId].length > 0) {
-                        return this.customTiers[eventId];
-                    }
+    const eventId = (typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId;
+    
+    // Check if the event has been explicitly customized in storage
+    if (this.customTiers && this.customTiers.hasOwnProperty(eventId)) {
+        return this.customTiers[eventId]; // Can return [] if all were deleted
+    }
 
-                    let basePriceStr = '$25 / KES 3,200';
-                    if (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.priceTag) {
-                        basePriceStr = eventOrId.priceTag;
-                    }
+    let basePriceStr = '$25 / KES 3,200';
+    if (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.priceTag) {
+        basePriceStr = eventOrId.priceTag;
+    }
 
-                    return [
-                        { name: 'Regular', price: basePriceStr, remaining: 45 },
-                        { name: 'VIP', price: '$60 / KES 7,800', remaining: 12 },
-                        { name: 'VVIP', price: '$150 / KES 19,500', remaining: 5 }
-                    ];
-                },
+    return [
+        { name: 'Regular', price: basePriceStr, remaining: 45 },
+        { name: 'VIP', price: '$60 / KES 7,800', remaining: 12 },
+        { name: 'VVIP', price: '$150 / KES 19,500', remaining: 5 }
+    ];
+},
 
                 getPrimaryPriceTag(event) {
                     if (!event || !event.id) return 'From $20';
