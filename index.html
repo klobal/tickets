@@ -862,7 +862,7 @@
                         const result = await response.json();
 
                         if (result.status === 'success') {
-                            alert('Order submitted successfully for ' + orderDescription + '! Confirmation sent to ' + this.buyerContact);
+                            alert('Order submitted successfully for ' + orderDescription + '! Your Ticket(s) will be sent to ' + this.buyerContact);
                             this.resetAllFilters();
                         } else {
                             throw new Error(result.message || 'Server returned an error');
