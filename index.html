@@ -565,7 +565,7 @@
                 newTierName: '',
                 newTierPrice: '',
                 newTierRemaining: '',
-                selectedTier: { name: 'Regular', price: '$20 / KES 2,500', remaining: 50 },
+                selectedTier: { name: 'Regular', price: '$20', remaining: 50 },
                 ticketQty: 1,
                 searchQuery: '',
                 selectedCategory: '',
@@ -628,7 +628,7 @@
 
                     return {
                         numericTotal: finalTotal,
-                        formattedTotal: originalSymbol + finalTotal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) + (priceStr.includes('KES') ? ' / KES' : '')
+                        formattedTotal: originalSymbol + finalTotal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) + (priceStr.includes('') ? ' / ' : '')
                     };
                 },
 
@@ -640,15 +640,15 @@
         return this.customTiers[eventId]; // Can return [] if all were deleted
     }
 
-    let basePriceStr = '$25 / KES 3,200';
+    let basePriceStr = '$25';
     if (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.priceTag) {
         basePriceStr = eventOrId.priceTag;
     }
 
     return [
         { name: 'Regular', price: basePriceStr, remaining: 45 },
-        { name: 'VIP', price: '$60 / KES 7,800', remaining: 12 },
-        { name: 'VVIP', price: '$150 / KES 19,500', remaining: 5 }
+        { name: 'VIP', price: '$60', remaining: 12 },
+        { name: 'VVIP', price: '$150', remaining: 5 }
     ];
 },
 
@@ -687,9 +687,9 @@
                         // If custom tiers are empty/not initialized yet, fall back to default list before filtering
                         if (!this.customTiers[eventId]) {
                             const defaults = [
-                                { name: 'Regular', price: '$25 / KES 3,200', remaining: 45 },
-                                { name: 'VIP', price: '$60 / KES 7,800', remaining: 12 },
-                                { name: 'VVIP', price: '$150 / KES 19,500', remaining: 5 }
+                                { name: 'Regular', price: '$25', remaining: 45 },
+                                { name: 'VIP', price: '$60', remaining: 12 },
+                                { name: 'VVIP', price: '$150', remaining: 5 }
                             ];
                             this.customTiers[eventId] = defaults;
                         }
