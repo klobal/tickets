@@ -633,11 +633,16 @@
                 },
 
                 getEventTiers(eventOrId) {
+    // 1. If it's an event object and already has a valid tiers array defined, use it directly!
+    if (typeof eventOrId === 'object' && eventOrId !== null && Array.isArray(eventOrId.tiers) && eventOrId.tiers.length > 0) {
+        return eventOrId.tiers;
+    }
+
     const eventId = (typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId;
     
-    // Check if the event has been explicitly customized in storage
+    // 2. Check local admin overrides
     if (this.customTiers && this.customTiers.hasOwnProperty(eventId)) {
-        return this.customTiers[eventId]; // Can return [] if all were deleted
+        return this.customTiers[eventId];
     }
 
     let basePriceStr = '$25';
@@ -645,6 +650,7 @@
         basePriceStr = eventOrId.priceTag;
     }
 
+    // 3. Ultimate fallback if nothing else exists
     return [
         { name: 'Regular', price: basePriceStr, remaining: 45 },
         { name: 'VIP', price: '$60', remaining: 12 },
