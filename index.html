@@ -382,7 +382,7 @@
                                     <span class="text-xl sm:text-2xl font-extrabold text-white" x-text="calculatedTotalSummary.formattedTotal"></span>
                                 </div>
                             </div>
-                            <p class="text-xs text-indigo-100 font-mono bg-indigo-950 p-4 rounded-xl border border-indigo-800 leading-relaxed" x-text="activeEvent.paymentInstructions + ' | Total Due for ' + ticketQty + 'x ' + selectedTier.name + ' ticket(s): ' + calculatedTotalSummary.formattedTotal"></p>
+                            <p class="text-xs text-indigo-100 font-mono bg-indigo-950 p-4 rounded-xl border border-indigo-800 leading-relaxed" x-html="activeEvent.paymentInstructions + '<br><br>| Total Due for ' + ticketQty + 'x ' + selectedTier.name + ' ticket(s): ' + calculatedTotalSummary.formattedTotal"></p>
                         </div>
 
                         <!-- STEP 4: SUBMIT PROOF -->
