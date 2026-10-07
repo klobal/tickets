@@ -634,15 +634,11 @@
 
                 getEventTiers(eventOrId) {
                     if (!eventOrId) return [];
-                    const eventId = (typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId;
+                    const eventId = String((typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId);
                     
-                    // 1. Check local admin custom tiers first
-                    if (this.customTiers) {
-                        for (const key in this.customTiers) {
-                            if (String(key) === String(eventId) && Array.isArray(this.customTiers[key]) && this.customTiers[key].length > 0) {
-                                return this.customTiers[key];
-                            }
-                        }
+                    // 1. Check local admin custom tiers first (with strict string coercion)
+                    if (this.customTiers && this.customTiers[eventId] && Array.isArray(this.customTiers[eventId])) {
+                        return this.customTiers[eventId];
                     }
 
                     // 2. Check if the event object itself has a tiers array from the backend
@@ -650,7 +646,7 @@
                         return eventOrId.tiers;
                     }
 
-                    // 3. Smart Default Fallback: Use the event's sheet priceTag so buyers always have at least 1 ticket tier available
+                    // 3. Smart Default Fallback
                     const price = (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.priceTag) ? eventOrId.priceTag : '$20';
                     return [
                         { name: 'Regular', price: price, remaining: 50 }
@@ -677,39 +673,53 @@
 
                     const stringId = String(eventId);
 
-                    // Initialize array if empty
-                    if (!this.customTiers[stringId]) {
-                        const existing = this.getEventTiers(eventId);
-                        this.customTiers[stringId] = Array.isArray(existing) ? [...existing] : [];
-                    }
+                    // Create a clean copy of current tiers for this event ID
+                    const currentTiers = JSON.parse(JSON.stringify(this.getEventTiers(eventId)));
+                    
+                    // Push new tier
+                    currentTiers.push(newTier);
 
-                    this.customTiers[stringId].push(newTier);
-                    this.customTiers = { ...this.customTiers };
+                    // Reassign reactively
+                    this.customTiers = {
+                        ...this.customTiers,
+                        [stringId]: currentTiers
+                    };
+
                     localStorage.setItem('eventsphere_tiers', JSON.stringify(this.customTiers));
 
                     this.newTierName = '';
                     this.newTierPrice = '';
                     this.newTierRemaining = '';
-                    alert('New ticket tier added successfully!');
+                    
+                    // Force refresh activeEvent reference if modal/express checkout is open
+                    if (this.activeEvent && String(this.activeEvent.id) === stringId) {
+                        this.selectedTier = currentTiers[0];
+                    }
+
+                    alert('New ticket tier added and saved successfully!');
                 },
 
                 deleteTicketTier(eventId, tierName) {
                     if (confirm(`Are you sure you want to delete the "${tierName}" tier?`)) {
                         const stringId = String(eventId);
 
-                        // Initialize customTiers with current visible tiers so deletion takes effect permanently
-                        if (!this.customTiers[stringId]) {
-                            this.customTiers[stringId] = JSON.parse(JSON.stringify(this.getEventTiers(eventId)));
-                        }
+                        // Grab current active tiers list
+                        const currentTiers = JSON.parse(JSON.stringify(this.getEventTiers(eventId)));
+                        
+                        // Filter out deleted tier
+                        const updatedTiers = currentTiers.filter(t => t.name !== tierName);
 
-                        this.customTiers[stringId] = this.customTiers[stringId].filter(t => t.name !== tierName);
-                        this.customTiers = { ...this.customTiers };
+                        this.customTiers = {
+                            ...this.customTiers,
+                            [stringId]: updatedTiers
+                        };
+                        
                         localStorage.setItem('eventsphere_tiers', JSON.stringify(this.customTiers));
 
                         // Refresh selected tier if the deleted one was active
-                        const remainingTiers = this.getEventTiers(eventId);
-                        if (remainingTiers.length > 0 && this.selectedTier && this.selectedTier.name === tierName) {
-                            this.selectedTier = remainingTiers[0];
+                        const remaining = this.getEventTiers(eventId);
+                        if (remaining.length > 0 && this.selectedTier && this.selectedTier.name === tierName) {
+                            this.selectedTier = remaining[0];
                         }
                     }
                 },
