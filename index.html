@@ -636,17 +636,29 @@
                     if (!eventOrId) return [];
                     const eventId = String((typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId);
                     
-                    // 1. Check local admin custom tiers first (with strict string coercion)
+                    // 1. Check local admin custom tiers first (highest priority)
                     if (this.customTiers && this.customTiers[eventId] && Array.isArray(this.customTiers[eventId])) {
                         return this.customTiers[eventId];
                     }
 
-                    // 2. Check if the event object itself has a tiers array from the backend
-                    if (typeof eventOrId === 'object' && eventOrId !== null && Array.isArray(eventOrId.tiers) && eventOrId.tiers.length > 0) {
-                        return eventOrId.tiers;
+                    // 2. Check if the event object has a tiers column/property from Google Sheets
+                    if (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.tiers) {
+                        if (Array.isArray(eventOrId.tiers)) {
+                            return eventOrId.tiers;
+                        }
+                        if (typeof eventOrId.tiers === 'string') {
+                            try {
+                                const parsed = JSON.parse(eventOrId.tiers);
+                                if (Array.isArray(parsed) && parsed.length > 0) {
+                                    return parsed;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing tiers JSON from sheet:', e);
+                            }
+                        }
                     }
 
-                    // 3. Smart Default Fallback
+                    // 3. Smart Default Fallback if no tiers are defined
                     const price = (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.priceTag) ? eventOrId.priceTag : '$20';
                     return [
                         { name: 'Regular', price: price, remaining: 50 }
