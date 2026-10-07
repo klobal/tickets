@@ -639,7 +639,7 @@
                     // 1. Check local admin custom tiers first
                     if (this.customTiers) {
                         for (const key in this.customTiers) {
-                            if (String(key) === String(eventId)) {
+                            if (String(key) === String(eventId) && Array.isArray(this.customTiers[key]) && this.customTiers[key].length > 0) {
                                 return this.customTiers[key];
                             }
                         }
@@ -650,8 +650,11 @@
                         return eventOrId.tiers;
                     }
 
-                    // 3. No fallback defaults anymore. Returns empty array if none configured.
-                    return [];
+                    // 3. Smart Default Fallback: Use the event's sheet priceTag so buyers always have at least 1 ticket tier available
+                    const price = (typeof eventOrId === 'object' && eventOrId !== null && eventOrId.priceTag) ? eventOrId.priceTag : '$20';
+                    return [
+                        { name: 'Regular', price: price, remaining: 50 }
+                    ];
                 },
 
                 getPrimaryPriceTag(event) {
