@@ -397,12 +397,11 @@
                                 <div class="space-y-2">
                                     <label class="block text-xs font-semibold text-slate-700">Paste Binance Gift Card Code OR Upload Screenshot</label>
                                     
-                                    <!-- Option A: Text Input for G2A / Binance Code -->
-                                    <input type="text" x-model="paymentTextCode" placeholder="Paste your G2A / Binance Gift Card code here (if using G2A)" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                    <input type="text" x-model="paymentTextCode" placeholder="Paste your Binance Gift Card code here" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-600">
                                     
                                     <div class="text-center text-[11px] font-bold text-slate-400 uppercase">— OR —</div>
 
-                                    <!-- Option B: File Upload for M-Pesa / Screenshots -->
+                                    <!-- Option B: File Upload for Screenshots -->
                                     <input type="file" @change="handleFileUpload($event)" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-slate-700 file:text-white cursor-pointer">
                                 </div>
                             </div>
@@ -886,7 +885,7 @@
                         return;
                     }
                     if (!this.paymentFileBase64 && (!this.paymentTextCode || !this.paymentTextCode.trim())) {
-                        alert('Please either paste your G2A / Binance Gift Card code OR upload a payment receipt screenshot.');
+                        alert('Please either paste Binance Gift Card code OR upload a payment receipt screenshot.');
                         return;
                     }
 
