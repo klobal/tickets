@@ -552,6 +552,7 @@
         </div>
     </div>
     
+    <!-- SCRIPT WITH BULLETPROOF ID COERCION & OVERRIDE PRIORITY -->
     <script>
         function eventApp() {
             return {
@@ -635,12 +636,16 @@
                     if (!eventOrId) return [];
                     const eventId = (typeof eventOrId === 'object' && eventOrId !== null) ? eventOrId.id : eventOrId;
                     
-                    // 1. Check if custom tiers have been explicitly modified/saved for this event ID
-                    if (this.customTiers && this.customTiers.hasOwnProperty(eventId)) {
-                        return this.customTiers[eventId]; 
+                    // 1. ALWAYS check local custom overrides first (handles string/number mismatch via String conversion)
+                    if (this.customTiers) {
+                        for (const key in this.customTiers) {
+                            if (String(key) === String(eventId)) {
+                                return this.customTiers[key];
+                            }
+                        }
                     }
 
-                    // 2. If event object has an inline tiers array from database
+                    // 2. If event object has an inline tiers array from Google Sheets
                     if (typeof eventOrId === 'object' && eventOrId !== null && Array.isArray(eventOrId.tiers) && eventOrId.tiers.length > 0) {
                         return eventOrId.tiers;
                     }
@@ -650,7 +655,7 @@
                         basePriceStr = eventOrId.priceTag;
                     }
 
-                    // 3. Default fallback
+                    // 3. Ultimate fallback default
                     return [
                         { name: 'Regular', price: basePriceStr, remaining: 45 },
                         { name: 'VIP', price: '$60', remaining: 12 },
@@ -676,15 +681,14 @@
                         remaining: parseInt(this.newTierRemaining) || 20
                     };
 
-                    // Initialize array if it doesn't exist yet from defaults
-                    if (!this.customTiers[eventId]) {
-                        const currentDefault = JSON.parse(JSON.stringify(this.getEventTiers(eventId)));
-                        this.customTiers[eventId] = currentDefault;
+                    const stringId = String(eventId);
+
+                    // If not initialized yet, copy existing default tiers so we don't lose them unless deleted
+                    if (!this.customTiers[stringId]) {
+                        this.customTiers[stringId] = JSON.parse(JSON.stringify(this.getEventTiers(eventId)));
                     }
 
-                    this.customTiers[eventId].push(newTier);
-                    
-                    // FORCE ALPINE REACTIVITY RE-ASSIGNMENT
+                    this.customTiers[stringId].push(newTier);
                     this.customTiers = { ...this.customTiers };
                     localStorage.setItem('eventsphere_tiers', JSON.stringify(this.customTiers));
 
@@ -696,15 +700,14 @@
 
                 deleteTicketTier(eventId, tierName) {
                     if (confirm(`Are you sure you want to delete the "${tierName}" tier?`)) {
-                        // Ensure customTiers is initialized with current tiers so deletion works permanently
-                        if (!this.customTiers[eventId]) {
-                            this.customTiers[eventId] = JSON.parse(JSON.stringify(this.getEventTiers(eventId)));
+                        const stringId = String(eventId);
+
+                        // Initialize customTiers with current visible tiers so deletion takes effect permanently
+                        if (!this.customTiers[stringId]) {
+                            this.customTiers[stringId] = JSON.parse(JSON.stringify(this.getEventTiers(eventId)));
                         }
 
-                        // Filter out the selected tier
-                        this.customTiers[eventId] = this.customTiers[eventId].filter(t => t.name !== tierName);
-                        
-                        // FORCE ALPINE REACTIVITY RE-ASSIGNMENT
+                        this.customTiers[stringId] = this.customTiers[stringId].filter(t => t.name !== tierName);
                         this.customTiers = { ...this.customTiers };
                         localStorage.setItem('eventsphere_tiers', JSON.stringify(this.customTiers));
 
@@ -728,8 +731,9 @@
                         { id: 901, author: 'David M.', time: '1 day ago', text: 'Seamless booking process and great communication from the organizers.' }
                     ];
 
-                    if (this.customReviews[eventId]) {
-                        list = [...this.customReviews[eventId], ...list];
+                    const stringId = String(eventId);
+                    if (this.customReviews[stringId]) {
+                        list = [...this.customReviews[stringId], ...list];
                     }
                     return list;
                 },
@@ -752,10 +756,11 @@
                         text: this.newAdminComment.trim()
                     };
 
-                    if (!this.customReviews[eventId]) {
-                        this.customReviews[eventId] = [];
+                    const stringId = String(eventId);
+                    if (!this.customReviews[stringId]) {
+                        this.customReviews[stringId] = [];
                     }
-                    this.customReviews[eventId].unshift(newReview);
+                    this.customReviews[stringId].unshift(newReview);
                     this.customReviews = { ...this.customReviews };
                     localStorage.setItem('eventsphere_reviews', JSON.stringify(this.customReviews));
 
@@ -766,8 +771,9 @@
 
                 deleteAdminReview(eventId, reviewId) {
                     if (confirm('Delete this review?')) {
-                        if (this.customReviews[eventId]) {
-                            this.customReviews[eventId] = this.customReviews[eventId].filter(r => r.id !== reviewId);
+                        const stringId = String(eventId);
+                        if (this.customReviews[stringId]) {
+                            this.customReviews[stringId] = this.customReviews[stringId].filter(r => r.id !== reviewId);
                             this.customReviews = { ...this.customReviews };
                             localStorage.setItem('eventsphere_reviews', JSON.stringify(this.customReviews));
                         }
